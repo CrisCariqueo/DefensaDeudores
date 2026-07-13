@@ -88,4 +88,15 @@
     <string name="match_dismiss">Omitir</string>
     <string name="edit_amount_title">Editar monto</string>
     <string name="edit_supersede_note">Esto registrará una corrección; el registro original no se edita directamente.</string>
+
+    <string name="config_dark_theme">Tema oscuro</string>
+    <string name="config_language">Idioma</string>
+    <string name="config_font">Fuente tipográfica</string>
+    <string name="config_font_default">Predeterminada</string>
+    <string name="config_font_serif">Serif</string>
+    <string name="config_font_sans">Sans</string>
+    <string name="config_font_mono">Mono</string>
+    <string name="config_return_bg">Color de fondo de devoluciones</string>
+    <string name="config_recent_size">Tamaño tabla recientes</string>
+    <string name="config_history_size">Tamaño tabla historial</string>
 </resources>

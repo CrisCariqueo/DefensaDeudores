@@ -13,6 +13,7 @@ import com.cristobalcariqueo.defensadedeudores.data.repository.SourceRepository
 import com.cristobalcariqueo.defensadedeudores.data.repository.SourceRepositoryImpl
 import com.cristobalcariqueo.defensadedeudores.data.repository.TrackRepository
 import com.cristobalcariqueo.defensadedeudores.data.repository.TrackRepositoryImpl
+import com.cristobalcariqueo.defensadedeudores.ui.screens.config.ConfigViewModel
 import com.cristobalcariqueo.defensadedeudores.ui.screens.main.MainViewModel
 import com.cristobalcariqueo.defensadedeudores.ui.screens.people.PeopleViewModel
 import com.cristobalcariqueo.defensadedeudores.ui.screens.sources.SourcesViewModel
@@ -48,4 +49,5 @@ val appModule = module {
     viewModel { StartingViewModel(get(), get(), get()) }
     viewModel { MainViewModel(get(), get()) }
     viewModel { (trackId: String) -> TrackViewModel(trackId, get(), get(), get(), get(), get()) }
+    viewModel { ConfigViewModel(get()) }
 }

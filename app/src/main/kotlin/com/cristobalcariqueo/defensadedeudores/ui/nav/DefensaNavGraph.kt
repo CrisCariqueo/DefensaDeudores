@@ -73,7 +73,9 @@ private fun DefensaNavHost(navController: NavHostController, startDestination: S
         composable(Destination.Sources.route) {
             SourcesScreen(onBack = { navController.popBackStack() })
         }
-        composable(Destination.Config.route) { ConfigScreen() }
+        composable(Destination.Config.route) {
+            ConfigScreen(onBack = { navController.popBackStack() })
+        }
     }
 }
 

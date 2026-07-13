@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontFamily
 
 private val DarkColors = darkColorScheme(
     primary = PrimaryDark,
@@ -23,19 +24,19 @@ private val LightColors = lightColorScheme(
 )
 
 /**
- * Dark theme is required by SCOPE.md; this also honors the system default and
- * will later read the user's explicit Config-screen override once that
- * screen's settings repository lands (task #10).
+ * Dark theme is required by SCOPE.md. MainActivity feeds the Config screen's
+ * explicit dark_theme/font settings; system defaults apply while they load.
  */
 @Composable
 fun DefensaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    fontFamily: FontFamily = FontFamily.Default,
     content: @Composable () -> Unit,
 ) {
     val colors = if (darkTheme) DarkColors else LightColors
     MaterialTheme(
         colorScheme = colors,
-        typography = DefensaTypography,
+        typography = defensaTypography(fontFamily),
         content = content,
     )
 }

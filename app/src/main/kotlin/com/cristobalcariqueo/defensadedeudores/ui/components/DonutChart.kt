@@ -2,7 +2,6 @@ package com.cristobalcariqueo.defensadedeudores.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +19,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.cristobalcariqueo.defensadedeudores.R
@@ -50,7 +50,9 @@ fun DonutChart(
     slices: List<GraphSlice>,
     modifier: Modifier = Modifier,
 ) {
-    val palette = if (isSystemInDarkTheme()) DarkPalette else LightPalette
+    // Follow the app theme (Config override), not the system: dark surfaces
+    // need the dark-stepped palette.
+    val palette = if (MaterialTheme.colorScheme.background.luminance() < 0.5f) DarkPalette else LightPalette
     val otherColor = MaterialTheme.colorScheme.outline
     val otherLabel = stringResource(R.string.track_graph_other)
 

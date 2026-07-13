@@ -88,4 +88,15 @@
     <string name="match_dismiss">Skip</string>
     <string name="edit_amount_title">Edit amount</string>
     <string name="edit_supersede_note">This will log a correction; the original registry is not edited directly.</string>
+
+    <string name="config_dark_theme">Dark theme</string>
+    <string name="config_language">Language</string>
+    <string name="config_font">Font</string>
+    <string name="config_font_default">Default</string>
+    <string name="config_font_serif">Serif</string>
+    <string name="config_font_sans">Sans</string>
+    <string name="config_font_mono">Mono</string>
+    <string name="config_return_bg">Return background color</string>
+    <string name="config_recent_size">Recent table size</string>
+    <string name="config_history_size">History table size</string>
 </resources>
