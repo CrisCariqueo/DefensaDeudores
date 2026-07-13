@@ -8,4 +8,29 @@
     <string name="screen_people_title">Personas</string>
     <string name="screen_sources_title">Fuentes</string>
     <string name="screen_config_title">Configuración</string>
+
+    <string name="action_add">Agregar</string>
+    <string name="action_save">Guardar</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_delete">Eliminar</string>
+    <string name="action_continue">Continuar</string>
+    <string name="cd_back">Volver</string>
+    <string name="label_name">Nombre</string>
+
+    <string name="dialog_edit_title">Editar nombre</string>
+    <string name="delete_confirm_title">¿Eliminar?</string>
+    <string name="delete_confirm_message">¿Eliminar \"%1$s\"? Si tiene registros asociados, su historial se conserva.</string>
+
+    <string name="people_add_title">Nueva persona</string>
+    <string name="people_empty">Aún no hay personas. Crea la primera con el botón +.</string>
+    <string name="sources_add_title">Nueva fuente</string>
+    <string name="sources_empty">Aún no hay fuentes. Crea la primera con el botón +.</string>
+
+    <string name="starting_intro">Para usar la app necesitas al menos una persona (deudor) y una fuente. Créalas aquí.</string>
+
+    <string name="main_empty">Aún no hay seguimientos. Crea el primero con el botón +.</string>
+    <string name="track_new_title">Nuevo seguimiento</string>
+    <string name="track_people_hint">Personas de acceso rápido (elige al menos una)</string>
+    <string name="track_no_people_warning">No hay personas para asociar. Crea al menos una primero.</string>
+    <string name="track_go_to_people">Ir a Personas</string>
 </resources>

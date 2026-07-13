@@ -2,6 +2,7 @@ package com.cristobalcariqueo.defensadedeudores.data.repository
 
 import com.cristobalcariqueo.defensadedeudores.domain.model.Person
 import com.cristobalcariqueo.defensadedeudores.domain.model.Registry
+import com.cristobalcariqueo.defensadedeudores.domain.model.Settings
 import com.cristobalcariqueo.defensadedeudores.domain.model.Source
 import com.cristobalcariqueo.defensadedeudores.domain.model.Track
 import kotlinx.coroutines.flow.Flow
@@ -46,4 +47,12 @@ interface RegistryRepository {
 
     suspend fun createReturn(trackId: String, personId: String, amount: Int, note: String?): Registry
     suspend fun editAmount(registryId: String, newAmount: Int)
+}
+
+interface SettingsRepository {
+    /** Emits defaults while the singleton row doesn't exist yet (first launch). */
+    fun observeSettings(): Flow<Settings>
+    suspend fun update(settings: Settings)
+    /** Flips the onboarded flag that gates the Starting screen. */
+    suspend fun markOnboarded()
 }

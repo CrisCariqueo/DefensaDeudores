@@ -8,4 +8,29 @@
     <string name="screen_people_title">People</string>
     <string name="screen_sources_title">Sources</string>
     <string name="screen_config_title">Config</string>
+
+    <string name="action_add">Add</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_continue">Continue</string>
+    <string name="cd_back">Back</string>
+    <string name="label_name">Name</string>
+
+    <string name="dialog_edit_title">Edit name</string>
+    <string name="delete_confirm_title">Delete?</string>
+    <string name="delete_confirm_message">Delete \"%1$s\"? If it has associated registries, its history is kept.</string>
+
+    <string name="people_add_title">New person</string>
+    <string name="people_empty">No people yet. Create the first one with the + button.</string>
+    <string name="sources_add_title">New source</string>
+    <string name="sources_empty">No sources yet. Create the first one with the + button.</string>
+
+    <string name="starting_intro">To use the app you need at least one person (debtor) and one source. Create them here.</string>
+
+    <string name="main_empty">No tracks yet. Create the first one with the + button.</string>
+    <string name="track_new_title">New track</string>
+    <string name="track_people_hint">Quick-pick people (choose at least one)</string>
+    <string name="track_no_people_warning">No people to associate. Create at least one first.</string>
+    <string name="track_go_to_people">Go to People</string>
 </resources>
