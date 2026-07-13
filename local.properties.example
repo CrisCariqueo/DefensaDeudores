@@ -1,0 +1,6 @@
+# Copy this to local.properties (gitignored) and fill in real values.
+# local.properties also needs sdk.dir, which Android Studio writes
+# automatically on first sync -- don't add it by hand.
+
+SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co
+SUPABASE_ANON_KEY=YOUR-ANON-KEY

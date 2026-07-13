@@ -1,0 +1,12 @@
+build:
+  maxIssues: 0
+
+style:
+  MaxLineLength:
+    maxLineLength: 120
+  ForbiddenComment:
+    active: false
+
+complexity:
+  LongParameterList:
+    functionThreshold: 7

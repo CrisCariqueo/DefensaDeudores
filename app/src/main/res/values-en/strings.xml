@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Defensa de Deudores</string>
+
+    <string name="screen_starting_title">Before you start</string>
+    <string name="screen_main_title">Home</string>
+    <string name="screen_track_title">Track</string>
+    <string name="screen_people_title">People</string>
+    <string name="screen_sources_title">Sources</string>
+    <string name="screen_config_title">Config</string>
+</resources>
