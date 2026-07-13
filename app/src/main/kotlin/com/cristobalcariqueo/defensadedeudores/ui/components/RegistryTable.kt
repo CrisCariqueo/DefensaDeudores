@@ -98,6 +98,8 @@ fun RegistryRow(
     HorizontalDivider(thickness = 0.5.dp)
 }
 
+private const val DEFAULT_RETURN_BG = 0xFFFFF3CD
+
 private fun parseHexColor(hex: String): Color = runCatching {
     Color(hex.toColorInt())
-}.getOrDefault(Color(0xFFFFF3CD))
+}.getOrDefault(Color(DEFAULT_RETURN_BG))

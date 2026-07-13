@@ -3,19 +3,25 @@
 Money-lending tracker. See `SCOPE.md` for the full feature spec and `DATA_MODEL.md`
 for the schema/rationale. This README covers project setup only.
 
-## What's scaffolded
+## What's built
 
 - Gradle/Kotlin/Compose project (`app/`), package `com.cristobalcariqueo.defensadedeudores`
 - `minSdk 29`, `targetSdk 35`, Material3 dark/light theme
-- Compose Navigation wired across all 8 screens (empty placeholders, each tagged `TODO(#n)` for the task that fills it in)
-- Koin DI (`di/AppModule.kt`), Supabase client provider
-- Repository *interfaces* only (`data/repository/Repositories.kt`) -- implementations land with their feature tasks
+- **Local-first v1 feature set is implemented and compiling** (`assembleDebug`
+  green, matcher unit tests pass, detekt clean): Room DB mirroring the Supabase
+  schema, onboarding, People/Sources CRUD, Main + Track screens (graphs,
+  quick-create, tables, search/filters), return-search + retReg matching,
+  edit/supersede flow, Config screen (theme/language/font/colors/table sizes)
+- Room is the source of truth; the Supabase sync engine + auth is the one
+  remaining v1 task and needs the Supabase project below to exist first
+- supabase-kt is pinned to 3.x (`auth-kt` and the `io.github.jan.supabase.auth`
+  namespace don't exist in 2.x)
 - `supabase/schema.sql` -- full DDL matching `DATA_MODEL.md`, including RLS policies and triggers
-- detekt config
+- detekt config tuned for Compose (PascalCase composables, dp/sp literals)
 
-Nothing beyond this has been built or run yet -- no Android SDK/Gradle available
-in the environment this was scaffolded in, so this hasn't been compiled. First
-open in Android Studio will surface anything that needs a version bump.
+Gradle needs a JDK 17-21 (Java 25 is too new for Gradle 8.10); point
+`JAVA_HOME` or Android Studio's Gradle JDK at one, e.g.
+`JAVA_HOME=~/.jdks/jdk-21.0.11+10 ./gradlew assembleDebug`.
 
 ## Setup, in order
 

@@ -6,7 +6,32 @@ style:
     maxLineLength: 120
   ForbiddenComment:
     active: false
+  # dp/sp/weight literals inside composables are the idiom, not magic
+  MagicNumber:
+    ignoreAnnotated: ['Composable']
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+  ReturnCount:
+    excludeGuardClauses: true
+
+naming:
+  # Composables are PascalCase by convention
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
+  # Files grouping small related declarations (Repositories.kt, DAO row results)
+  MatchingDeclarationName:
+    active: false
 
 complexity:
   LongParameterList:
     functionThreshold: 7
+    ignoreAnnotated: ['Composable']
+  # Screen-level composables are declarative layout, not imperative logic
+  LongMethod:
+    ignoreAnnotated: ['Composable']
+  TooManyFunctions:
+    ignoreAnnotatedFunctions: ['Composable']
+    # Registry DAO/repo/viewmodel surface is spec-driven (filters, matching,
+    # edit flow all live on one entity) -- splitting would hurt cohesion
+    thresholdInClasses: 25
+    thresholdInInterfaces: 20

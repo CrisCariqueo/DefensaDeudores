@@ -30,11 +30,10 @@ object RetRegMatcher {
      */
     fun forward(newReg: Registry, uncheckedRetRegs: List<Registry>): MatchSuggestion? {
         val candidates = uncheckedRetRegs.filter { it.type == RegistryType.RETURN && !it.checked }
-        val full = candidates.filter { it.amount >= newReg.amount }.minByOrNull { it.amount }
-        if (full != null) return MatchSuggestion.NewRegCovered(newReg, full)
-        val partial = candidates.filter { it.amount < newReg.amount }.maxByOrNull { it.amount }
-        if (partial != null) return MatchSuggestion.NewRegReduced(newReg, partial)
-        return null
+        return candidates.filter { it.amount >= newReg.amount }.minByOrNull { it.amount }
+            ?.let { MatchSuggestion.NewRegCovered(newReg, it) }
+            ?: candidates.filter { it.amount < newReg.amount }.maxByOrNull { it.amount }
+                ?.let { MatchSuggestion.NewRegReduced(newReg, it) }
     }
 
     /**
@@ -45,10 +44,9 @@ object RetRegMatcher {
     fun retro(retReg: Registry, uncheckedNormals: List<Registry>): MatchSuggestion? {
         if (retReg.checked || retReg.amount <= 0) return null
         val candidates = uncheckedNormals.filter { it.type == RegistryType.NORMAL && !it.checked }
-        val full = candidates.filter { it.amount <= retReg.amount }.maxByOrNull { it.amount }
-        if (full != null) return MatchSuggestion.ExistingCovered(retReg, full)
-        val partial = candidates.filter { it.amount > retReg.amount }.minByOrNull { it.amount }
-        if (partial != null) return MatchSuggestion.ExistingReduced(retReg, partial)
-        return null
+        return candidates.filter { it.amount <= retReg.amount }.maxByOrNull { it.amount }
+            ?.let { MatchSuggestion.ExistingCovered(retReg, it) }
+            ?: candidates.filter { it.amount > retReg.amount }.minByOrNull { it.amount }
+                ?.let { MatchSuggestion.ExistingReduced(retReg, it) }
     }
 }
