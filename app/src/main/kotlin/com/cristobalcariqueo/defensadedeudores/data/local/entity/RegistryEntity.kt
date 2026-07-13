@@ -41,6 +41,8 @@ data class RegistryEntity(
     @ColumnInfo(name = "supersedes_id") val supersedesId: String? = null,
     @ColumnInfo(name = "matched_retreg_id") val matchedRetRegId: String? = null,
     @ColumnInfo(name = "deleted_at") val deletedAt: Long? = null,
+    @ColumnInfo(name = "dirty") val dirty: Boolean = true,
+    @ColumnInfo(name = "remote_updated_at") val remoteUpdatedAt: Long? = null,
 ) {
     companion object {
         const val TYPE_NORMAL = 0

@@ -14,8 +14,11 @@ interface PersonDao {
     @Insert
     suspend fun insert(person: PersonEntity)
 
-    @Query("UPDATE people SET name = :name, updated_at = :now WHERE id = :id")
+    @Query("UPDATE people SET name = :name, updated_at = :now, dirty = 1 WHERE id = :id")
     suspend fun rename(id: String, name: String, now: Long)
+
+    @Query("SELECT remote_updated_at FROM people WHERE id = :id")
+    suspend fun remoteUpdatedAt(id: String): Long?
 
     /** All rows count as a reference -- superseded and soft-deleted included. */
     @Query("SELECT COUNT(*) FROM registries WHERE person_id = :id")
@@ -24,6 +27,6 @@ interface PersonDao {
     @Query("DELETE FROM people WHERE id = :id")
     suspend fun hardDelete(id: String)
 
-    @Query("UPDATE people SET deleted_at = :now, updated_at = :now WHERE id = :id")
+    @Query("UPDATE people SET deleted_at = :now, updated_at = :now, dirty = 1 WHERE id = :id")
     suspend fun softDelete(id: String, now: Long)
 }

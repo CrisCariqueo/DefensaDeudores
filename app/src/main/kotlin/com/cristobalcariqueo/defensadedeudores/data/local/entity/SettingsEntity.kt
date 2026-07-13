@@ -20,6 +20,8 @@ data class SettingsEntity(
     @ColumnInfo(name = "recent_table_size") val recentTableSize: Int = 50,
     @ColumnInfo(name = "historical_table_size") val historicalTableSize: Int = 100,
     val onboarded: Boolean = false,
+    @ColumnInfo(name = "dirty") val dirty: Boolean = true,
+    @ColumnInfo(name = "remote_updated_at") val remoteUpdatedAt: Long? = null,
 ) {
     companion object {
         const val SINGLETON_ID = 1

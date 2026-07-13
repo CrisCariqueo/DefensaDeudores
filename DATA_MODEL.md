@@ -86,6 +86,7 @@ Click an amount → edit popup. Check `created_at`, not `date` (avoids backdatin
 | recent_table_size | smallint | default 50, one of 20/30/40/50/60/70 |
 | historical_table_size | smallint | default 100, one of 50/75/100/125/150 |
 | onboarded | bool | default false; flips true once the account has created ≥1 person and ≥1 source, gating the Starting screen |
+| updated_at | timestamptz | default now(), bumped on every write; sync conflict detection (same as other tables) |
 
 ## Offline & sync
 - Local writes queue while offline (Room/SQLDelight local DB mirrors the Supabase schema), sync on reconnect.

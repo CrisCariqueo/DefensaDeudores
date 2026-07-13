@@ -17,9 +17,28 @@ interface SettingsDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun seed(settings: SettingsEntity = SettingsEntity())
 
+    /** Sync-engine write path -- carries dirty/remote_updated_at explicitly. */
     @Upsert
     suspend fun upsert(settings: SettingsEntity)
 
-    @Query("UPDATE settings SET onboarded = 1 WHERE id = ${SettingsEntity.SINGLETON_ID}")
+    /** Config-screen write path: touches the user fields only, preserving sync metadata. */
+    @Query(
+        """
+        UPDATE settings SET font = :font, language = :language, dark_theme = :darkTheme,
+            return_bg_color = :returnBgColor, recent_table_size = :recentTableSize,
+            historical_table_size = :historicalTableSize, dirty = 1
+        WHERE id = ${SettingsEntity.SINGLETON_ID}
+        """,
+    )
+    suspend fun updateValues(
+        font: String,
+        language: String,
+        darkTheme: Boolean,
+        returnBgColor: String,
+        recentTableSize: Int,
+        historicalTableSize: Int,
+    )
+
+    @Query("UPDATE settings SET onboarded = 1, dirty = 1 WHERE id = ${SettingsEntity.SINGLETON_ID}")
     suspend fun markOnboarded()
 }

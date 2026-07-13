@@ -103,7 +103,8 @@ create table settings (
     return_bg_color text not null default '#FFF3CD',
     recent_table_size smallint not null default 50 check (recent_table_size in (20, 30, 40, 50, 60, 70)),
     historical_table_size smallint not null default 100 check (historical_table_size in (50, 75, 100, 125, 150)),
-    onboarded boolean not null default false
+    onboarded boolean not null default false,
+    updated_at timestamptz not null default now()
 );
 
 alter table settings enable row level security;
@@ -139,4 +140,6 @@ create trigger people_bump_updated_at before update on people
 create trigger sources_bump_updated_at before update on sources
     for each row execute procedure public.bump_updated_at();
 create trigger registries_bump_updated_at before update on registries
+    for each row execute procedure public.bump_updated_at();
+create trigger settings_bump_updated_at before update on settings
     for each row execute procedure public.bump_updated_at();

@@ -14,6 +14,8 @@ data class TrackEntity(
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long,
     @ColumnInfo(name = "deleted_at") val deletedAt: Long? = null,
+    @ColumnInfo(name = "dirty") val dirty: Boolean = true,
+    @ColumnInfo(name = "remote_updated_at") val remoteUpdatedAt: Long? = null,
 )
 
 fun TrackEntity.toDomain() = Track(

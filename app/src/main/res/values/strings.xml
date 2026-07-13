@@ -99,4 +99,27 @@
     <string name="config_return_bg">Color de fondo de devoluciones</string>
     <string name="config_recent_size">Tamaño tabla recientes</string>
     <string name="config_history_size">Tamaño tabla historial</string>
+
+    <string name="config_account">Cuenta y sincronización</string>
+    <string name="auth_email">Correo</string>
+    <string name="auth_password">Contraseña</string>
+    <string name="auth_sign_in">Iniciar sesión</string>
+    <string name="auth_sign_up">Crear cuenta</string>
+    <string name="auth_sign_out">Cerrar sesión</string>
+    <string name="auth_signed_in_as">Sesión: %1$s</string>
+    <string name="auth_check_email">Revisa tu correo para confirmar la cuenta.</string>
+    <string name="sync_now">Sincronizar ahora</string>
+    <string name="sync_status_idle">Sin sincronizar aún</string>
+    <string name="sync_status_running">Sincronizando…</string>
+    <string name="sync_status_done">Sincronizado</string>
+    <string name="sync_status_error">Error de sincronización: %1$s</string>
+    <string name="sync_conflicts_button">Resolver conflictos (%1$d)</string>
+    <string name="conflicts_title">Conflictos de sincronización</string>
+    <string name="conflicts_empty">Sin conflictos.</string>
+    <string name="conflicts_row">Conflicto en %1$s</string>
+    <string name="conflicts_keep_local">Local</string>
+    <string name="conflicts_keep_remote">Remoto</string>
+    <string name="conflicts_merge">Por campo</string>
+    <string name="conflicts_local_value">Local: %1$s</string>
+    <string name="conflicts_remote_value">Remoto: %1$s</string>
 </resources>

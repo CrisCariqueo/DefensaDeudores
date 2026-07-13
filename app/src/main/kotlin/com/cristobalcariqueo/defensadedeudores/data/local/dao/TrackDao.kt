@@ -41,10 +41,10 @@ interface TrackDao {
     )
     fun observeShortcutPeople(trackId: String): Flow<List<PersonEntity>>
 
-    @Query("UPDATE tracks SET name = :name, updated_at = :now WHERE id = :id")
+    @Query("UPDATE tracks SET name = :name, updated_at = :now, dirty = 1 WHERE id = :id")
     suspend fun rename(id: String, name: String, now: Long)
 
     /** Tracks are only ever soft-deleted -- registries keep pointing at them. */
-    @Query("UPDATE tracks SET deleted_at = :now, updated_at = :now WHERE id = :id")
+    @Query("UPDATE tracks SET deleted_at = :now, updated_at = :now, dirty = 1 WHERE id = :id")
     suspend fun softDelete(id: String, now: Long)
 }

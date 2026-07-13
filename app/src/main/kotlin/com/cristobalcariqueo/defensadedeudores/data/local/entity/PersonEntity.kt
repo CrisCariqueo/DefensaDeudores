@@ -19,6 +19,10 @@ data class PersonEntity(
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long,
     @ColumnInfo(name = "deleted_at") val deletedAt: Long? = null,
+    /** Pending local changes to push; rows are born dirty. */
+    @ColumnInfo(name = "dirty") val dirty: Boolean = true,
+    /** Server updated_at seen at last sync -- the conflict-detection base. Null = never synced. */
+    @ColumnInfo(name = "remote_updated_at") val remoteUpdatedAt: Long? = null,
 )
 
 fun PersonEntity.toDomain() = Person(

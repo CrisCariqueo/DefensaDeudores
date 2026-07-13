@@ -15,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.cristobalcariqueo.defensadedeudores.data.repository.SettingsRepository
 import com.cristobalcariqueo.defensadedeudores.ui.screens.config.ConfigScreen
+import com.cristobalcariqueo.defensadedeudores.ui.screens.conflicts.ConflictsScreen
 import com.cristobalcariqueo.defensadedeudores.ui.screens.main.MainScreen
 import com.cristobalcariqueo.defensadedeudores.ui.screens.people.PeopleScreen
 import com.cristobalcariqueo.defensadedeudores.ui.screens.sources.SourcesScreen
@@ -74,7 +75,13 @@ private fun DefensaNavHost(navController: NavHostController, startDestination: S
             SourcesScreen(onBack = { navController.popBackStack() })
         }
         composable(Destination.Config.route) {
-            ConfigScreen(onBack = { navController.popBackStack() })
+            ConfigScreen(
+                onBack = { navController.popBackStack() },
+                onOpenConflicts = { navController.navigate(Destination.Conflicts.route) },
+            )
+        }
+        composable(Destination.Conflicts.route) {
+            ConflictsScreen(onBack = { navController.popBackStack() })
         }
     }
 }

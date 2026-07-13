@@ -6,11 +6,15 @@ import com.cristobalcariqueo.defensadedeudores.data.local.dao.PersonDao
 import com.cristobalcariqueo.defensadedeudores.data.local.dao.RegistryDao
 import com.cristobalcariqueo.defensadedeudores.data.local.dao.SettingsDao
 import com.cristobalcariqueo.defensadedeudores.data.local.dao.SourceDao
+import com.cristobalcariqueo.defensadedeudores.data.local.dao.SyncDao
 import com.cristobalcariqueo.defensadedeudores.data.local.dao.TrackDao
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.PersonEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.RegistryEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.SettingsEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.SourceEntity
+import com.cristobalcariqueo.defensadedeudores.data.local.entity.SyncConflictEntity
+import com.cristobalcariqueo.defensadedeudores.data.local.entity.SyncDeleteEntity
+import com.cristobalcariqueo.defensadedeudores.data.local.entity.SyncStateEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackPersonEntity
 
@@ -26,8 +30,11 @@ import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackPersonEnti
         SourceEntity::class,
         RegistryEntity::class,
         SettingsEntity::class,
+        SyncStateEntity::class,
+        SyncConflictEntity::class,
+        SyncDeleteEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class DefensaDatabase : RoomDatabase() {
@@ -36,6 +43,7 @@ abstract class DefensaDatabase : RoomDatabase() {
     abstract fun settingsDao(): SettingsDao
     abstract fun trackDao(): TrackDao
     abstract fun registryDao(): RegistryDao
+    abstract fun syncDao(): SyncDao
 
     companion object {
         const val NAME = "defensa.db"

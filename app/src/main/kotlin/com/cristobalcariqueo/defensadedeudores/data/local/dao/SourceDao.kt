@@ -14,8 +14,11 @@ interface SourceDao {
     @Insert
     suspend fun insert(source: SourceEntity)
 
-    @Query("UPDATE sources SET name = :name, updated_at = :now WHERE id = :id")
+    @Query("UPDATE sources SET name = :name, updated_at = :now, dirty = 1 WHERE id = :id")
     suspend fun rename(id: String, name: String, now: Long)
+
+    @Query("SELECT remote_updated_at FROM sources WHERE id = :id")
+    suspend fun remoteUpdatedAt(id: String): Long?
 
     /** All rows count as a reference -- superseded and soft-deleted included. */
     @Query("SELECT COUNT(*) FROM registries WHERE source_id = :id")
@@ -24,6 +27,6 @@ interface SourceDao {
     @Query("DELETE FROM sources WHERE id = :id")
     suspend fun hardDelete(id: String)
 
-    @Query("UPDATE sources SET deleted_at = :now, updated_at = :now WHERE id = :id")
+    @Query("UPDATE sources SET deleted_at = :now, updated_at = :now, dirty = 1 WHERE id = :id")
     suspend fun softDelete(id: String, now: Long)
 }

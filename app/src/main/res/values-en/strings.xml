@@ -99,4 +99,27 @@
     <string name="config_return_bg">Return background color</string>
     <string name="config_recent_size">Recent table size</string>
     <string name="config_history_size">History table size</string>
+
+    <string name="config_account">Account &amp; sync</string>
+    <string name="auth_email">Email</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_sign_in">Sign in</string>
+    <string name="auth_sign_up">Sign up</string>
+    <string name="auth_sign_out">Sign out</string>
+    <string name="auth_signed_in_as">Signed in: %1$s</string>
+    <string name="auth_check_email">Check your email to confirm the account.</string>
+    <string name="sync_now">Sync now</string>
+    <string name="sync_status_idle">Not synced yet</string>
+    <string name="sync_status_running">Syncing…</string>
+    <string name="sync_status_done">Synced</string>
+    <string name="sync_status_error">Sync error: %1$s</string>
+    <string name="sync_conflicts_button">Resolve conflicts (%1$d)</string>
+    <string name="conflicts_title">Sync conflicts</string>
+    <string name="conflicts_empty">No conflicts.</string>
+    <string name="conflicts_row">Conflict in %1$s</string>
+    <string name="conflicts_keep_local">Local</string>
+    <string name="conflicts_keep_remote">Remote</string>
+    <string name="conflicts_merge">By field</string>
+    <string name="conflicts_local_value">Local: %1$s</string>
+    <string name="conflicts_remote_value">Remote: %1$s</string>
 </resources>

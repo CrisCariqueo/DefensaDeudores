@@ -61,7 +61,7 @@ interface RegistryDao {
     @Query(
         """
         UPDATE registries SET amount = :amount, checked = :checked,
-            matched_retreg_id = NULL, updated_at = :now WHERE id = :id
+            matched_retreg_id = NULL, updated_at = :now, dirty = 1 WHERE id = :id
         """,
     )
     suspend fun setAmountUnlinked(id: String, amount: Int, checked: Boolean, now: Long)
@@ -70,21 +70,21 @@ interface RegistryDao {
     @Query(
         """
         UPDATE registries SET type = ${RegistryEntity.TYPE_SUPERSEDED}, checked = 0,
-            matched_retreg_id = NULL, updated_at = :now WHERE id = :id
+            matched_retreg_id = NULL, updated_at = :now, dirty = 1 WHERE id = :id
         """,
     )
     suspend fun markSuperseded(id: String, now: Long)
 
     /** Path A of return-search: one-shot settlement, no retReg created. */
-    @Query("UPDATE registries SET checked = 1, updated_at = :now WHERE id IN (:ids)")
+    @Query("UPDATE registries SET checked = 1, updated_at = :now, dirty = 1 WHERE id IN (:ids)")
     suspend fun checkAll(ids: List<String>, now: Long)
 
     @Query(
-        "UPDATE registries SET checked = 1, matched_retreg_id = :retRegId, updated_at = :now WHERE id = :id",
+        "UPDATE registries SET checked = 1, matched_retreg_id = :retRegId, updated_at = :now, dirty = 1 WHERE id = :id",
     )
     suspend fun checkAndLink(id: String, retRegId: String, now: Long)
 
-    @Query("UPDATE registries SET amount = :amount, checked = :checked, updated_at = :now WHERE id = :id")
+    @Query("UPDATE registries SET amount = :amount, checked = :checked, updated_at = :now, dirty = 1 WHERE id = :id")
     suspend fun setAmountAndChecked(id: String, amount: Int, checked: Boolean, now: Long)
 
     /** Forward case 1 / retro case 1: covered reg checked+linked, retReg reduced (consumed at 0). */
