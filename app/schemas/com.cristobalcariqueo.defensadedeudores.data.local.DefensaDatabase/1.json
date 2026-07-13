@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "eca370f6d5357254bb08efea5e236c6d",
+    "identityHash": "00ce1dfc7fcaf5b4444196536033345d",
     "entities": [
       {
         "tableName": "tracks",
@@ -198,7 +198,7 @@
       },
       {
         "tableName": "registries",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `track_id` TEXT NOT NULL, `person_id` TEXT NOT NULL, `source_id` TEXT NOT NULL, `amount` INTEGER NOT NULL, `type` INTEGER NOT NULL, `checked` INTEGER NOT NULL, `note` TEXT, `date` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `supersedes_id` TEXT, `matched_retreg_id` TEXT, `deleted_at` INTEGER, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `track_id` TEXT NOT NULL, `person_id` TEXT NOT NULL, `source_id` TEXT, `amount` INTEGER NOT NULL, `type` INTEGER NOT NULL, `checked` INTEGER NOT NULL, `note` TEXT, `date` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `supersedes_id` TEXT, `matched_retreg_id` TEXT, `deleted_at` INTEGER, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -222,7 +222,7 @@
             "fieldPath": "sourceId",
             "columnName": "source_id",
             "affinity": "TEXT",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "amount",
@@ -401,7 +401,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'eca370f6d5357254bb08efea5e236c6d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '00ce1dfc7fcaf5b4444196536033345d')"
     ]
   }
 }

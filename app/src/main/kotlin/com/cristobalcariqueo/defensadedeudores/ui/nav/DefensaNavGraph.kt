@@ -60,7 +60,12 @@ private fun DefensaNavHost(navController: NavHostController, startDestination: S
         }
         composable(Destination.Track.route) { backStackEntry ->
             val trackId = backStackEntry.arguments?.getString(Destination.Track.ARG_TRACK_ID).orEmpty()
-            TrackScreen(trackId = trackId)
+            TrackScreen(
+                trackId = trackId,
+                onBack = { navController.popBackStack() },
+                onOpenPeople = { navController.navigate(Destination.People.route) },
+                onOpenSources = { navController.navigate(Destination.Sources.route) },
+            )
         }
         composable(Destination.People.route) {
             PeopleScreen(onBack = { navController.popBackStack() })

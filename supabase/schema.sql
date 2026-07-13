@@ -60,12 +60,14 @@ create policy "track_people_owner" on track_people for all
 
 -- ============================================================ registries
 -- type: 0 = normal, 1 = return, 2 = superseded
+-- source_id is null for return regs (a return isn't tied to a source);
+-- normal regs must have one (enforced by source_required below).
 create table registries (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id) on delete cascade,
     track_id uuid not null references tracks(id) on delete cascade,
     person_id uuid not null references people(id),
-    source_id uuid not null references sources(id),
+    source_id uuid references sources(id),
     amount integer not null check (amount > 0),
     type smallint not null default 0 check (type in (0, 1, 2)),
     checked boolean not null default false,
@@ -76,7 +78,8 @@ create table registries (
     supersedes_id uuid references registries(id),
     matched_retreg_id uuid references registries(id),
     deleted_at timestamptz,
-    constraint note_length check (char_length(note) <= 140)
+    constraint note_length check (char_length(note) <= 140),
+    constraint source_required check (type <> 0 or source_id is not null)
 );
 
 alter table registries enable row level security;

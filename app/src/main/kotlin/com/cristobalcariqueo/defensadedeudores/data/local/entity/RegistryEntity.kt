@@ -30,7 +30,7 @@ data class RegistryEntity(
     @PrimaryKey val id: String,
     @ColumnInfo(name = "track_id") val trackId: String,
     @ColumnInfo(name = "person_id") val personId: String,
-    @ColumnInfo(name = "source_id") val sourceId: String,
+    @ColumnInfo(name = "source_id") val sourceId: String?,
     val amount: Int,
     val type: Int,
     val checked: Boolean,

@@ -1,7 +1,10 @@
 package com.cristobalcariqueo.defensadedeudores.data.repository
 
+import com.cristobalcariqueo.defensadedeudores.domain.model.GraphSlice
 import com.cristobalcariqueo.defensadedeudores.domain.model.Person
 import com.cristobalcariqueo.defensadedeudores.domain.model.Registry
+import com.cristobalcariqueo.defensadedeudores.domain.model.RegistryFilter
+import com.cristobalcariqueo.defensadedeudores.domain.model.RegistryWithNames
 import com.cristobalcariqueo.defensadedeudores.domain.model.Settings
 import com.cristobalcariqueo.defensadedeudores.domain.model.Source
 import com.cristobalcariqueo.defensadedeudores.domain.model.Track
@@ -14,6 +17,9 @@ import kotlinx.coroutines.flow.Flow
  */
 interface TrackRepository {
     fun observeTracks(): Flow<List<Track>>
+    fun observeTrack(trackId: String): Flow<Track?>
+    /** Quick-pick debtor shortcuts for the track's quick-create area. */
+    fun observeShortcutPeople(trackId: String): Flow<List<Person>>
     suspend fun create(name: String, shortcutPersonIds: List<String>): Track
     suspend fun rename(trackId: String, name: String)
     suspend fun softDelete(trackId: String)
@@ -36,7 +42,28 @@ interface SourceRepository {
 }
 
 interface RegistryRepository {
-    fun observeRegistries(trackId: String, limit: Int): Flow<List<Registry>>
+    /**
+     * Filtered, paginated, newest-first table rows. Serves both tables: the
+     * recent table is page 0 with the configured recent size; the historical
+     * table pages through the same filtered set.
+     */
+    fun observeRows(
+        trackId: String,
+        filter: RegistryFilter,
+        limit: Int,
+        offset: Int,
+    ): Flow<List<RegistryWithNames>>
+
+    /** Row count of the filtered set -- drives the historical table's pagination. */
+    fun observeCount(trackId: String, filter: RegistryFilter): Flow<Int>
+
+    /** Circular-graph slices, unchecked normal regs only (outstanding debt). */
+    fun observeDebtorSlices(trackId: String): Flow<List<GraphSlice>>
+    fun observeSourceSlices(trackId: String): Flow<List<GraphSlice>>
+
+    /** Net outstanding for the track: unchecked normal minus unchecked returns. */
+    fun observeOutstandingTotal(trackId: String): Flow<Long>
+
     suspend fun createNormal(
         trackId: String,
         personId: String,
@@ -45,6 +72,7 @@ interface RegistryRepository {
         note: String?,
     ): Registry
 
+    /** Returns have no source (schema: source_id null for type = return). */
     suspend fun createReturn(trackId: String, personId: String, amount: Int, note: String?): Registry
     suspend fun editAmount(registryId: String, newAmount: Int)
 }

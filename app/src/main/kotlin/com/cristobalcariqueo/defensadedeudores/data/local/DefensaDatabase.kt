@@ -3,6 +3,7 @@ package com.cristobalcariqueo.defensadedeudores.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.cristobalcariqueo.defensadedeudores.data.local.dao.PersonDao
+import com.cristobalcariqueo.defensadedeudores.data.local.dao.RegistryDao
 import com.cristobalcariqueo.defensadedeudores.data.local.dao.SettingsDao
 import com.cristobalcariqueo.defensadedeudores.data.local.dao.SourceDao
 import com.cristobalcariqueo.defensadedeudores.data.local.dao.TrackDao
@@ -34,6 +35,7 @@ abstract class DefensaDatabase : RoomDatabase() {
     abstract fun sourceDao(): SourceDao
     abstract fun settingsDao(): SettingsDao
     abstract fun trackDao(): TrackDao
+    abstract fun registryDao(): RegistryDao
 
     companion object {
         const val NAME = "defensa.db"
