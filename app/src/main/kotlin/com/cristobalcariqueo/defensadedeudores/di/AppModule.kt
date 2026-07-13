@@ -41,7 +41,7 @@ val appModule = module {
     single<SourceRepository> { SourceRepositoryImpl(get()) }
     single<SettingsRepository> { SettingsRepositoryImpl(get()) }
     single<TrackRepository> { TrackRepositoryImpl(get()) }
-    single<RegistryRepository> { RegistryRepositoryImpl(get()) }
+    single<RegistryRepository> { RegistryRepositoryImpl(get(), get()) }
 
     viewModel { PeopleViewModel(get()) }
     viewModel { SourcesViewModel(get()) }

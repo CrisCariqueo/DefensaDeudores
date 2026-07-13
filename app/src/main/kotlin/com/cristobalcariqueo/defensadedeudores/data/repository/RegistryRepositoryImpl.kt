@@ -1,10 +1,14 @@
 package com.cristobalcariqueo.defensadedeudores.data.repository
 
+import androidx.room.withTransaction
 import androidx.sqlite.db.SimpleSQLiteQuery
+import com.cristobalcariqueo.defensadedeudores.data.local.DefensaDatabase
 import com.cristobalcariqueo.defensadedeudores.data.local.dao.RegistryDao
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.RegistryEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.toDomain
+import com.cristobalcariqueo.defensadedeudores.domain.model.EditResult
 import com.cristobalcariqueo.defensadedeudores.domain.model.GraphSlice
+import com.cristobalcariqueo.defensadedeudores.domain.model.MatchSuggestion
 import com.cristobalcariqueo.defensadedeudores.domain.model.Registry
 import com.cristobalcariqueo.defensadedeudores.domain.model.RegistryFilter
 import com.cristobalcariqueo.defensadedeudores.domain.model.RegistryType
@@ -13,10 +17,15 @@ import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 
-class RegistryRepositoryImpl(private val dao: RegistryDao) : RegistryRepository {
+class RegistryRepositoryImpl(
+    private val db: DefensaDatabase,
+    private val dao: RegistryDao,
+) : RegistryRepository {
 
     override fun observeRows(
         trackId: String,
@@ -80,9 +89,118 @@ class RegistryRepositoryImpl(private val dao: RegistryDao) : RegistryRepository 
         note: String?,
     ): Registry = insert(trackId, personId, null, amount, RegistryEntity.TYPE_RETURN, note)
 
-    override suspend fun editAmount(registryId: String, newAmount: Int) {
-        // Edit/supersede flow lands with task #9.
-        throw UnsupportedOperationException("editAmount lands with task #9")
+    override suspend fun editAmount(registryId: String, newAmount: Int): EditResult {
+        require(newAmount > 0) { "Registry amounts are always positive" }
+        return db.withTransaction {
+            val old = dao.getById(registryId)
+                ?: throw IllegalArgumentException("Registry $registryId not found")
+            require(old.type == RegistryEntity.TYPE_NORMAL) { "Only normal regs are editable" }
+            val now = Clock.System.now()
+            val nowMs = now.toEpochMilliseconds()
+
+            // Undo an existing retReg match before touching amounts: credit the
+            // old amount back and uncheck the retReg (DATA_MODEL.md edit flow).
+            val restoredRetReg = old.matchedRetRegId?.takeIf { old.checked }?.let { retId ->
+                dao.getById(retId)?.also { ret ->
+                    dao.setAmountAndChecked(ret.id, ret.amount + old.amount, false, nowMs)
+                }?.let { it.copy(amount = it.amount + old.amount, checked = false) }
+            }
+            // Checked with no link = settled via return-search Path A; the
+            // settlement was real, so the corrected row stays checked.
+            val keepChecked = old.checked && old.matchedRetRegId == null
+
+            val createdToday = Instant.fromEpochMilliseconds(old.createdAt)
+                .toLocalDateTime(TimeZone.currentSystemDefault()).date ==
+                Clock.System.todayIn(TimeZone.currentSystemDefault())
+
+            if (createdToday) {
+                dao.setAmountUnlinked(old.id, newAmount, keepChecked, nowMs)
+                tryRematch(old.id, newAmount, restoredRetReg, nowMs)
+                EditResult.InPlace(old.id)
+            } else {
+                dao.markSuperseded(old.id, nowMs)
+                val newReg = RegistryEntity(
+                    id = UUID.randomUUID().toString(),
+                    trackId = old.trackId,
+                    personId = old.personId,
+                    sourceId = old.sourceId,
+                    amount = newAmount,
+                    type = RegistryEntity.TYPE_NORMAL,
+                    checked = keepChecked,
+                    note = old.note,
+                    date = old.date,
+                    createdAt = nowMs,
+                    updatedAt = nowMs,
+                    supersedesId = old.id,
+                )
+                dao.insert(newReg)
+                val rematched = tryRematch(newReg.id, newAmount, restoredRetReg, nowMs)
+                EditResult.Superseded(
+                    newReg = newReg.copy(
+                        checked = newReg.checked || rematched,
+                        matchedRetRegId = if (rematched) restoredRetReg?.id else null,
+                    ).toDomain(),
+                    rematched = rematched,
+                )
+            }
+        }
+    }
+
+    /**
+     * Re-applies the corrected amount against the retReg the original was
+     * matched to -- only if it still fully fits; otherwise the reg is left for
+     * the normal match-suggestion flow.
+     */
+    private suspend fun tryRematch(
+        registryId: String,
+        amount: Int,
+        retReg: RegistryEntity?,
+        nowMs: Long,
+    ): Boolean {
+        if (retReg == null || retReg.amount < amount) return false
+        dao.applyFullCover(registryId, retReg.id, retReg.amount - amount, nowMs)
+        return true
+    }
+
+    override suspend fun uncheckedNormals(trackId: String, personId: String): List<Registry> =
+        dao.uncheckedNormals(trackId, personId).map(RegistryEntity::toDomain)
+
+    override suspend fun uncheckedRetRegs(trackId: String, personId: String): List<Registry> =
+        dao.uncheckedRetRegs(trackId, personId).map(RegistryEntity::toDomain)
+
+    override suspend fun settleExact(registryIds: List<String>) {
+        if (registryIds.isEmpty()) return
+        dao.checkAll(registryIds, Clock.System.now().toEpochMilliseconds())
+    }
+
+    override suspend fun applyMatch(suggestion: MatchSuggestion) {
+        val now = Clock.System.now().toEpochMilliseconds()
+        when (suggestion) {
+            is MatchSuggestion.NewRegCovered -> dao.applyFullCover(
+                coveredId = suggestion.newReg.id,
+                retRegId = suggestion.retReg.id,
+                retRegRemainder = suggestion.retReg.amount - suggestion.newReg.amount,
+                now = now,
+            )
+            is MatchSuggestion.ExistingCovered -> dao.applyFullCover(
+                coveredId = suggestion.normal.id,
+                retRegId = suggestion.retReg.id,
+                retRegRemainder = suggestion.retReg.amount - suggestion.normal.amount,
+                now = now,
+            )
+            is MatchSuggestion.NewRegReduced -> dao.applyPartialCover(
+                openRegId = suggestion.newReg.id,
+                openRegRemainder = suggestion.newReg.amount - suggestion.retReg.amount,
+                retRegId = suggestion.retReg.id,
+                now = now,
+            )
+            is MatchSuggestion.ExistingReduced -> dao.applyPartialCover(
+                openRegId = suggestion.normal.id,
+                openRegRemainder = suggestion.normal.amount - suggestion.retReg.amount,
+                retRegId = suggestion.retReg.id,
+                now = now,
+            )
+        }
     }
 
     private suspend fun insert(

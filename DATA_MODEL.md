@@ -51,7 +51,7 @@ People surfaced as quick-pick debtor shortcuts in a track's quick-create area. D
 | track_id | uuid fk tracks.id | |
 | person_id | uuid fk people.id | any person owned by user — NOT restricted to track_people shortcuts |
 | source_id | uuid fk sources.id, nullable | null for return regs (a return isn't tied to a source); normal regs must have one — `CHECK (type <> 0 OR source_id IS NOT NULL)` |
-| amount | integer | CLP, no decimals, always stored positive; sign/direction comes from `type` at display/sum time. `CHECK (amount > 0)` — no business cap, int4's own range (up to 2,147,483,647) is the only ceiling |
+| amount | integer | CLP, no decimals, stored positive; sign/direction comes from `type` at display/sum time. For retRegs, `amount` is the *remaining* value — it shrinks as it absorbs debt and reaches 0 when fully consumed. `CHECK (amount >= 0)` + returns-only exemption for 0 — no business cap, int4's own range (up to 2,147,483,647) is the only ceiling |
 | type | smallint | `0 = normal, 1 = return, 2 = superseded` |
 | checked | bool | default false; normal reg = fully returned, retReg = fully consumed |
 | note | text | ~140 char cap, app-enforced |

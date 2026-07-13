@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
@@ -83,6 +84,9 @@ fun TrackScreen(
     val debtorSlices by viewModel.debtorSlices.collectAsState()
     val sourceSlices by viewModel.sourceSlices.collectAsState()
     val outstandingTotal by viewModel.outstandingTotal.collectAsState()
+    val returnSearch by viewModel.returnSearch.collectAsState()
+    val suggestion by viewModel.suggestion.collectAsState()
+    val editTarget by viewModel.editTarget.collectAsState()
 
     var menuOpen by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf(false) }
@@ -185,6 +189,15 @@ fun TrackScreen(
                             contentDescription = stringResource(R.string.track_filters),
                         )
                     }
+                    IconButton(
+                        onClick = viewModel::openReturnSearch,
+                        enabled = selectedDebtorId != null,
+                    ) {
+                        Icon(
+                            Icons.Default.CurrencyExchange,
+                            contentDescription = stringResource(R.string.return_search_title),
+                        )
+                    }
                 }
             }
 
@@ -207,7 +220,7 @@ fun TrackScreen(
                 }
             } else {
                 items(recentRows, key = { it.registry.id }) { row ->
-                    RegistryRow(row, returnBg) { /* edit flow -- task #9 */ }
+                    RegistryRow(row, returnBg, onAmountClick = viewModel::openEdit)
                 }
             }
 
@@ -234,7 +247,7 @@ fun TrackScreen(
                     )
                 }
                 items(historyRows, key = { "h-${it.registry.id}" }) { row ->
-                    RegistryRow(row, returnBg) { /* edit flow -- task #9 */ }
+                    RegistryRow(row, returnBg, onAmountClick = viewModel::openEdit)
                 }
                 item {
                     HistoryPager(
@@ -290,6 +303,33 @@ fun TrackScreen(
                 onDismiss = { quickCreateSource = null },
             )
         }
+    }
+
+    editTarget?.let { row ->
+        EditAmountDialog(
+            row = row,
+            onConfirm = viewModel::confirmEdit,
+            onDismiss = viewModel::closeEdit,
+        )
+    }
+
+    returnSearch?.let { state ->
+        ReturnSearchDialog(
+            state = state,
+            onAmountChange = viewModel::setReturnAmount,
+            onToggle = viewModel::toggleReturnSelection,
+            onSettle = viewModel::settleSelected,
+            onCreateReturn = viewModel::createReturnFromSearch,
+            onDismiss = viewModel::closeReturnSearch,
+        )
+    }
+
+    suggestion?.let { current ->
+        MatchSuggestionDialog(
+            suggestion = current,
+            onConfirm = viewModel::confirmSuggestion,
+            onDismiss = viewModel::dismissSuggestion,
+        )
     }
 
     if (filtersOpen) {

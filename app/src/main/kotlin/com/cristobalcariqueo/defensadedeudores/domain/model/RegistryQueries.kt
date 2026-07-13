@@ -17,6 +17,14 @@ data class GraphSlice(
     val total: Long,
 )
 
+/** Outcome of the edit flow (SCOPE.md): same-day edits mutate, older ones supersede. */
+sealed interface EditResult {
+    data class InPlace(val registryId: String) : EditResult
+
+    /** [rematched] = the corrected amount was re-applied against the original retReg. */
+    data class Superseded(val newReg: Registry, val rematched: Boolean) : EditResult
+}
+
 /**
  * AND-combinable table filters + plain-text search (matches amount and note) --
  * SCOPE.md Track screen toolbar. Empty/null fields don't filter.

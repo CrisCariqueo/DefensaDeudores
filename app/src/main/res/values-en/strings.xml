@@ -75,4 +75,17 @@
     <string name="checked_all">All</string>
     <string name="checked_pending">Pending</string>
     <string name="checked_settled">Settled</string>
+
+    <string name="return_search_title">Return search</string>
+    <string name="return_selected_sum">Selected: %1$s of %2$s</string>
+    <string name="return_no_candidates">No pending registries with amount less than or equal.</string>
+    <string name="return_settle">Settle selected</string>
+    <string name="return_create">Create return</string>
+    <string name="match_title">Match suggestion</string>
+    <string name="match_covered_msg">The %1$s debt will register as checked.</string>
+    <string name="match_reduced_msg">The debt will register as %1$s.</string>
+    <string name="match_confirm">Apply</string>
+    <string name="match_dismiss">Skip</string>
+    <string name="edit_amount_title">Edit amount</string>
+    <string name="edit_supersede_note">This will log a correction; the original registry is not edited directly.</string>
 </resources>

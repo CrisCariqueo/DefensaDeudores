@@ -68,7 +68,9 @@ create table registries (
     track_id uuid not null references tracks(id) on delete cascade,
     person_id uuid not null references people(id),
     source_id uuid references sources(id),
-    amount integer not null check (amount > 0),
+    -- retRegs are reduced as they absorb debt and may reach 0 (fully consumed);
+    -- everything else stays strictly positive.
+    amount integer not null check (amount >= 0),
     type smallint not null default 0 check (type in (0, 1, 2)),
     checked boolean not null default false,
     note text,
@@ -79,7 +81,8 @@ create table registries (
     matched_retreg_id uuid references registries(id),
     deleted_at timestamptz,
     constraint note_length check (char_length(note) <= 140),
-    constraint source_required check (type <> 0 or source_id is not null)
+    constraint source_required check (type <> 0 or source_id is not null),
+    constraint amount_positive_unless_consumed_return check (amount > 0 or type = 1)
 );
 
 alter table registries enable row level security;

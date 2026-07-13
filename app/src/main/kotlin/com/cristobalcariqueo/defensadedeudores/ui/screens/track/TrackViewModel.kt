@@ -7,9 +7,14 @@ import com.cristobalcariqueo.defensadedeudores.data.repository.RegistryRepositor
 import com.cristobalcariqueo.defensadedeudores.data.repository.SettingsRepository
 import com.cristobalcariqueo.defensadedeudores.data.repository.SourceRepository
 import com.cristobalcariqueo.defensadedeudores.data.repository.TrackRepository
+import com.cristobalcariqueo.defensadedeudores.domain.model.EditResult
 import com.cristobalcariqueo.defensadedeudores.domain.model.GraphSlice
+import com.cristobalcariqueo.defensadedeudores.domain.model.MatchSuggestion
 import com.cristobalcariqueo.defensadedeudores.domain.model.Person
+import com.cristobalcariqueo.defensadedeudores.domain.model.Registry
 import com.cristobalcariqueo.defensadedeudores.domain.model.RegistryFilter
+import com.cristobalcariqueo.defensadedeudores.domain.model.RegistryType
+import com.cristobalcariqueo.defensadedeudores.domain.model.RetRegMatcher
 import com.cristobalcariqueo.defensadedeudores.domain.model.RegistryWithNames
 import com.cristobalcariqueo.defensadedeudores.domain.model.Settings
 import com.cristobalcariqueo.defensadedeudores.domain.model.Source
@@ -145,8 +150,125 @@ class TrackViewModel(
     fun createNormal(personId: String, sourceId: String, amount: Int, note: String?) {
         if (amount <= 0) return
         viewModelScope.launch {
-            registryRepository.createNormal(trackId, personId, sourceId, amount, note?.ifBlank { null })
+            val reg = registryRepository.createNormal(
+                trackId, personId, sourceId, amount, note?.ifBlank { null },
+            )
+            // Forward match moment: every new normal reg scans the debtor's live retRegs.
+            val retRegs = registryRepository.uncheckedRetRegs(trackId, personId)
+            _suggestion.value = RetRegMatcher.forward(reg, retRegs)
         }
+    }
+
+    // ---- return-search modal (SCOPE.md: pull direction, manual)
+
+    private val _returnSearch = MutableStateFlow<ReturnSearchState?>(null)
+    val returnSearch: StateFlow<ReturnSearchState?> = _returnSearch.asStateFlow()
+
+    private val _suggestion = MutableStateFlow<MatchSuggestion?>(null)
+    val suggestion: StateFlow<MatchSuggestion?> = _suggestion.asStateFlow()
+
+    fun openReturnSearch() {
+        val debtor = selectedDebtorId.value ?: return
+        viewModelScope.launch {
+            _returnSearch.value = ReturnSearchState(
+                debtorId = debtor,
+                candidates = registryRepository.uncheckedNormals(trackId, debtor),
+            )
+        }
+    }
+
+    fun closeReturnSearch() {
+        _returnSearch.value = null
+    }
+
+    fun setReturnAmount(text: String) {
+        _returnSearch.update { state ->
+            state?.copy(amountText = text.filter(Char::isDigit), selected = emptySet())
+        }
+    }
+
+    fun toggleReturnSelection(registryId: String) {
+        _returnSearch.update { state ->
+            state?.copy(
+                selected = if (registryId in state.selected) state.selected - registryId
+                else state.selected + registryId,
+            )
+        }
+    }
+
+    /** Path A: exact-sum selection gets checked directly, no retReg. */
+    fun settleSelected() {
+        val state = _returnSearch.value ?: return
+        if (state.selectedSum != state.amount || state.selected.isEmpty()) return
+        viewModelScope.launch {
+            registryRepository.settleExact(state.selected.toList())
+            _returnSearch.value = null
+        }
+    }
+
+    /** Path B: persist a retReg, then fire the retroactive match scan. */
+    fun createReturnFromSearch() {
+        val state = _returnSearch.value ?: return
+        val amount = state.amount ?: return
+        if (amount <= 0) return
+        viewModelScope.launch {
+            val retReg = registryRepository.createReturn(trackId, state.debtorId, amount, null)
+            _returnSearch.value = null
+            scanRetro(retReg.id, state.debtorId)
+        }
+    }
+
+    fun confirmSuggestion() {
+        val current = _suggestion.value ?: return
+        viewModelScope.launch {
+            registryRepository.applyMatch(current)
+            _suggestion.value = null
+            // Retro full-covers may leave a remainder on the retReg -- keep
+            // suggesting (each step confirmed) until consumed or dismissed.
+            if (current is MatchSuggestion.ExistingCovered) {
+                scanRetro(current.retReg.id, current.normal.personId)
+            }
+        }
+    }
+
+    fun dismissSuggestion() {
+        _suggestion.value = null
+    }
+
+    // ---- edit flow (task #9): same-day in place, older regs supersede
+
+    private val _editTarget = MutableStateFlow<RegistryWithNames?>(null)
+    val editTarget: StateFlow<RegistryWithNames?> = _editTarget.asStateFlow()
+
+    /** Only normal regs are editable; superseded are frozen, returns carry remaining-value semantics. */
+    fun openEdit(row: RegistryWithNames) {
+        if (row.registry.type == RegistryType.NORMAL) _editTarget.value = row
+    }
+
+    fun closeEdit() {
+        _editTarget.value = null
+    }
+
+    fun confirmEdit(newAmount: Int) {
+        val row = _editTarget.value ?: return
+        if (newAmount <= 0) return
+        viewModelScope.launch {
+            val result = registryRepository.editAmount(row.registry.id, newAmount)
+            _editTarget.value = null
+            // A superseded reg that ended up unmatched re-enters the normal
+            // forward-suggestion flow (DATA_MODEL.md edit flow).
+            if (result is EditResult.Superseded && !result.rematched && !result.newReg.checked) {
+                val retRegs = registryRepository.uncheckedRetRegs(trackId, result.newReg.personId)
+                _suggestion.value = RetRegMatcher.forward(result.newReg, retRegs)
+            }
+        }
+    }
+
+    private suspend fun scanRetro(retRegId: String, personId: String) {
+        val retReg = registryRepository.uncheckedRetRegs(trackId, personId)
+            .firstOrNull { it.id == retRegId } ?: return
+        val normals = registryRepository.uncheckedNormals(trackId, personId)
+        _suggestion.value = RetRegMatcher.retro(retReg, normals)
     }
 
     fun renameTrack(name: String) {
@@ -167,4 +289,21 @@ class TrackViewModel(
         const val DEFAULT_RECENT = 50
         const val DEFAULT_HISTORY = 100
     }
+}
+
+/** Return-search modal state: entered amount + selectable unchecked normals. */
+data class ReturnSearchState(
+    val debtorId: String,
+    val amountText: String = "",
+    val candidates: List<Registry> = emptyList(),
+    val selected: Set<String> = emptySet(),
+) {
+    val amount: Int? get() = amountText.toIntOrNull()
+
+    /** Regs offered for Path A: unchecked normals with amount <= the entered amount. */
+    val eligible: List<Registry>
+        get() = amount?.let { a -> candidates.filter { it.amount <= a } } ?: emptyList()
+
+    val selectedSum: Int
+        get() = candidates.filter { it.id in selected }.sumOf { it.amount }
 }

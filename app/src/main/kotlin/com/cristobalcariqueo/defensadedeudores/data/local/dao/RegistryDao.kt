@@ -6,6 +6,7 @@ import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.RawQuery
+import androidx.room.Transaction
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.PersonEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.RegistryEntity
@@ -30,6 +31,75 @@ data class SliceResult(
 interface RegistryDao {
     @Insert
     suspend fun insert(registry: RegistryEntity)
+
+    /** Debtor's unchecked normal regs in this track, for return-search + retro matching. */
+    @Query(
+        """
+        SELECT * FROM registries
+        WHERE track_id = :trackId AND person_id = :personId
+          AND type = ${RegistryEntity.TYPE_NORMAL} AND checked = 0 AND deleted_at IS NULL
+        ORDER BY date DESC, created_at DESC
+        """,
+    )
+    suspend fun uncheckedNormals(trackId: String, personId: String): List<RegistryEntity>
+
+    /** Debtor's live retRegs in this track, for forward matching. */
+    @Query(
+        """
+        SELECT * FROM registries
+        WHERE track_id = :trackId AND person_id = :personId
+          AND type = ${RegistryEntity.TYPE_RETURN} AND checked = 0 AND deleted_at IS NULL
+        ORDER BY date DESC, created_at DESC
+        """,
+    )
+    suspend fun uncheckedRetRegs(trackId: String, personId: String): List<RegistryEntity>
+
+    @Query("SELECT * FROM registries WHERE id = :id")
+    suspend fun getById(id: String): RegistryEntity?
+
+    /** Amount correction that also drops any retReg link. */
+    @Query(
+        """
+        UPDATE registries SET amount = :amount, checked = :checked,
+            matched_retreg_id = NULL, updated_at = :now WHERE id = :id
+        """,
+    )
+    suspend fun setAmountUnlinked(id: String, amount: Int, checked: Boolean, now: Long)
+
+    /** Old row of a supersede: frozen out of totals/graphs/matching. */
+    @Query(
+        """
+        UPDATE registries SET type = ${RegistryEntity.TYPE_SUPERSEDED}, checked = 0,
+            matched_retreg_id = NULL, updated_at = :now WHERE id = :id
+        """,
+    )
+    suspend fun markSuperseded(id: String, now: Long)
+
+    /** Path A of return-search: one-shot settlement, no retReg created. */
+    @Query("UPDATE registries SET checked = 1, updated_at = :now WHERE id IN (:ids)")
+    suspend fun checkAll(ids: List<String>, now: Long)
+
+    @Query(
+        "UPDATE registries SET checked = 1, matched_retreg_id = :retRegId, updated_at = :now WHERE id = :id",
+    )
+    suspend fun checkAndLink(id: String, retRegId: String, now: Long)
+
+    @Query("UPDATE registries SET amount = :amount, checked = :checked, updated_at = :now WHERE id = :id")
+    suspend fun setAmountAndChecked(id: String, amount: Int, checked: Boolean, now: Long)
+
+    /** Forward case 1 / retro case 1: covered reg checked+linked, retReg reduced (consumed at 0). */
+    @Transaction
+    suspend fun applyFullCover(coveredId: String, retRegId: String, retRegRemainder: Int, now: Long) {
+        checkAndLink(coveredId, retRegId, now)
+        setAmountAndChecked(retRegId, retRegRemainder, retRegRemainder == 0, now)
+    }
+
+    /** Forward case 2 / retro case 2: open reg reduced, retReg fully consumed. */
+    @Transaction
+    suspend fun applyPartialCover(openRegId: String, openRegRemainder: Int, retRegId: String, now: Long) {
+        setAmountAndChecked(openRegId, openRegRemainder, false, now)
+        setAmountAndChecked(retRegId, 0, true, now)
+    }
 
     /**
      * Filtered + paginated table query built in the repository (filters are

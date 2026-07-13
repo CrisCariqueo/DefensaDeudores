@@ -75,4 +75,17 @@
     <string name="checked_all">Todos</string>
     <string name="checked_pending">Pendientes</string>
     <string name="checked_settled">Saldados</string>
+
+    <string name="return_search_title">Buscar devolución</string>
+    <string name="return_selected_sum">Seleccionado: %1$s de %2$s</string>
+    <string name="return_no_candidates">No hay registros pendientes con monto menor o igual.</string>
+    <string name="return_settle">Saldar seleccionados</string>
+    <string name="return_create">Crear devolución</string>
+    <string name="match_title">Sugerencia de cruce</string>
+    <string name="match_covered_msg">La deuda de %1$s quedará saldada.</string>
+    <string name="match_reduced_msg">La deuda quedará en %1$s.</string>
+    <string name="match_confirm">Aplicar</string>
+    <string name="match_dismiss">Omitir</string>
+    <string name="edit_amount_title">Editar monto</string>
+    <string name="edit_supersede_note">Esto registrará una corrección; el registro original no se edita directamente.</string>
 </resources>

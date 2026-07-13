@@ -1,6 +1,8 @@
 package com.cristobalcariqueo.defensadedeudores.data.repository
 
+import com.cristobalcariqueo.defensadedeudores.domain.model.EditResult
 import com.cristobalcariqueo.defensadedeudores.domain.model.GraphSlice
+import com.cristobalcariqueo.defensadedeudores.domain.model.MatchSuggestion
 import com.cristobalcariqueo.defensadedeudores.domain.model.Person
 import com.cristobalcariqueo.defensadedeudores.domain.model.Registry
 import com.cristobalcariqueo.defensadedeudores.domain.model.RegistryFilter
@@ -74,7 +76,26 @@ interface RegistryRepository {
 
     /** Returns have no source (schema: source_id null for type = return). */
     suspend fun createReturn(trackId: String, personId: String, amount: Int, note: String?): Registry
-    suspend fun editAmount(registryId: String, newAmount: Int)
+
+    /**
+     * Edit flow (SCOPE.md): created today -> in-place update; older -> the old
+     * row is superseded and a corrected row links back via supersedes_id. A
+     * matched reg first credits its retReg back, then re-applies only if the
+     * corrected amount still fully fits.
+     */
+    suspend fun editAmount(registryId: String, newAmount: Int): EditResult
+
+    /** Debtor's unchecked normal regs in the track (return-search list + retro matching). */
+    suspend fun uncheckedNormals(trackId: String, personId: String): List<Registry>
+
+    /** Debtor's live retRegs in the track (forward matching). */
+    suspend fun uncheckedRetRegs(trackId: String, personId: String): List<Registry>
+
+    /** Return-search Path A: check the exact-sum selection directly, no retReg. */
+    suspend fun settleExact(registryIds: List<String>)
+
+    /** Applies a confirmed [MatchSuggestion] atomically. Never called without user confirmation. */
+    suspend fun applyMatch(suggestion: MatchSuggestion)
 }
 
 interface SettingsRepository {
