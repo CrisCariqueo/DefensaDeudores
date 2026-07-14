@@ -17,7 +17,8 @@ data class Registry(
     val id: String,
     val trackId: String,
     val personId: String,
-    val sourceId: String,
+    /** Null for return regs -- a return isn't tied to a source. */
+    val sourceId: String?,
     /** CLP, always positive; [type] carries the sign at display/sum time. */
     val amount: Int,
     val type: RegistryType,

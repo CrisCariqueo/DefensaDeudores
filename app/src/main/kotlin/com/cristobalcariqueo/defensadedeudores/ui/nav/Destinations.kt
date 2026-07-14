@@ -6,6 +6,7 @@ sealed class Destination(val route: String) {
     data object People : Destination("people")
     data object Sources : Destination("sources")
     data object Config : Destination("config")
+    data object Conflicts : Destination("conflicts")
 
     data object Track : Destination("track/{trackId}") {
         const val ARG_TRACK_ID = "trackId"

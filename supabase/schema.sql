@@ -60,13 +60,17 @@ create policy "track_people_owner" on track_people for all
 
 -- ============================================================ registries
 -- type: 0 = normal, 1 = return, 2 = superseded
+-- source_id is null for return regs (a return isn't tied to a source);
+-- normal regs must have one (enforced by source_required below).
 create table registries (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id) on delete cascade,
     track_id uuid not null references tracks(id) on delete cascade,
     person_id uuid not null references people(id),
-    source_id uuid not null references sources(id),
-    amount integer not null check (amount > 0),
+    source_id uuid references sources(id),
+    -- retRegs are reduced as they absorb debt and may reach 0 (fully consumed);
+    -- everything else stays strictly positive.
+    amount integer not null check (amount >= 0),
     type smallint not null default 0 check (type in (0, 1, 2)),
     checked boolean not null default false,
     note text,
@@ -76,7 +80,9 @@ create table registries (
     supersedes_id uuid references registries(id),
     matched_retreg_id uuid references registries(id),
     deleted_at timestamptz,
-    constraint note_length check (char_length(note) <= 140)
+    constraint note_length check (char_length(note) <= 140),
+    constraint source_required check (type <> 0 or source_id is not null),
+    constraint amount_positive_unless_consumed_return check (amount > 0 or type = 1)
 );
 
 alter table registries enable row level security;
@@ -97,7 +103,8 @@ create table settings (
     return_bg_color text not null default '#FFF3CD',
     recent_table_size smallint not null default 50 check (recent_table_size in (20, 30, 40, 50, 60, 70)),
     historical_table_size smallint not null default 100 check (historical_table_size in (50, 75, 100, 125, 150)),
-    onboarded boolean not null default false
+    onboarded boolean not null default false,
+    updated_at timestamptz not null default now()
 );
 
 alter table settings enable row level security;
@@ -133,4 +140,6 @@ create trigger people_bump_updated_at before update on people
 create trigger sources_bump_updated_at before update on sources
     for each row execute procedure public.bump_updated_at();
 create trigger registries_bump_updated_at before update on registries
+    for each row execute procedure public.bump_updated_at();
+create trigger settings_bump_updated_at before update on settings
     for each row execute procedure public.bump_updated_at();

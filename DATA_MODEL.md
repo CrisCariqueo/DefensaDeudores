@@ -50,8 +50,8 @@ People surfaced as quick-pick debtor shortcuts in a track's quick-create area. D
 | user_id | uuid fk auth.users | |
 | track_id | uuid fk tracks.id | |
 | person_id | uuid fk people.id | any person owned by user — NOT restricted to track_people shortcuts |
-| source_id | uuid fk sources.id | |
-| amount | integer | CLP, no decimals, always stored positive; sign/direction comes from `type` at display/sum time. `CHECK (amount > 0)` — no business cap, int4's own range (up to 2,147,483,647) is the only ceiling |
+| source_id | uuid fk sources.id, nullable | null for return regs (a return isn't tied to a source); normal regs must have one — `CHECK (type <> 0 OR source_id IS NOT NULL)` |
+| amount | integer | CLP, no decimals, stored positive; sign/direction comes from `type` at display/sum time. For retRegs, `amount` is the *remaining* value — it shrinks as it absorbs debt and reaches 0 when fully consumed. `CHECK (amount >= 0)` + returns-only exemption for 0 — no business cap, int4's own range (up to 2,147,483,647) is the only ceiling |
 | type | smallint | `0 = normal, 1 = return, 2 = superseded` |
 | checked | bool | default false; normal reg = fully returned, retReg = fully consumed |
 | note | text | ~140 char cap, app-enforced |
@@ -86,6 +86,7 @@ Click an amount → edit popup. Check `created_at`, not `date` (avoids backdatin
 | recent_table_size | smallint | default 50, one of 20/30/40/50/60/70 |
 | historical_table_size | smallint | default 100, one of 50/75/100/125/150 |
 | onboarded | bool | default false; flips true once the account has created ≥1 person and ≥1 source, gating the Starting screen |
+| updated_at | timestamptz | default now(), bumped on every write; sync conflict detection (same as other tables) |
 
 ## Offline & sync
 - Local writes queue while offline (Room/SQLDelight local DB mirrors the Supabase schema), sync on reconnect.
