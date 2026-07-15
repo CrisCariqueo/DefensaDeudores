@@ -143,3 +143,12 @@ create trigger registries_bump_updated_at before update on registries
     for each row execute procedure public.bump_updated_at();
 create trigger settings_bump_updated_at before update on settings
     for each row execute procedure public.bump_updated_at();
+
+-- ============================================================ grants
+-- Projects created after Supabase's secure-by-default change no longer
+-- auto-grant table privileges, so grant explicitly. RLS still scopes every
+-- row to its owner; anon gets nothing because the app only syncs signed in.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+alter default privileges in schema public
+    grant select, insert, update, delete on tables to authenticated;
