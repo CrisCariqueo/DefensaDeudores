@@ -14,8 +14,8 @@ interface PersonDao {
     @Insert
     suspend fun insert(person: PersonEntity)
 
-    @Query("UPDATE people SET name = :name, updated_at = :now, dirty = 1 WHERE id = :id")
-    suspend fun rename(id: String, name: String, now: Long)
+    @Query("UPDATE people SET name = :name, color = :color, updated_at = :now, dirty = 1 WHERE id = :id")
+    suspend fun update(id: String, name: String, color: String?, now: Long)
 
     @Query("SELECT remote_updated_at FROM people WHERE id = :id")
     suspend fun remoteUpdatedAt(id: String): Long?

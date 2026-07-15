@@ -5,7 +5,7 @@
     <string name="screen_starting_title">Before you start</string>
     <string name="screen_main_title">Home</string>
     <string name="screen_track_title">Track</string>
-    <string name="screen_people_title">People</string>
+    <string name="screen_people_title">Debtors</string>
     <string name="screen_sources_title">Sources</string>
     <string name="screen_config_title">Config</string>
 
@@ -21,18 +21,18 @@
     <string name="delete_confirm_title">Delete?</string>
     <string name="delete_confirm_message">Delete \"%1$s\"? If it has associated registries, its history is kept.</string>
 
-    <string name="people_add_title">New person</string>
-    <string name="people_empty">No people yet. Create the first one with the + button.</string>
+    <string name="people_add_title">New debtor</string>
+    <string name="people_empty">No debtors yet. Create the first one with the + button.</string>
     <string name="sources_add_title">New source</string>
     <string name="sources_empty">No sources yet. Create the first one with the + button.</string>
 
-    <string name="starting_intro">To use the app you need at least one person (debtor) and one source. Create them here.</string>
+    <string name="starting_intro">To use the app you need at least one debtor and one source. Create them here.</string>
 
     <string name="main_empty">No tracks yet. Create the first one with the + button.</string>
     <string name="track_new_title">New track</string>
-    <string name="track_people_hint">Quick-pick people (choose at least one)</string>
-    <string name="track_no_people_warning">No people to associate. Create at least one first.</string>
-    <string name="track_go_to_people">Go to People</string>
+    <string name="track_people_hint">Quick-pick debtors (choose at least one)</string>
+    <string name="track_no_people_warning">No debtors to associate. Create at least one first.</string>
+    <string name="track_go_to_people">Go to Debtors</string>
 
     <string name="track_menu">Options</string>
     <string name="action_rename">Rename</string>
@@ -44,7 +44,7 @@
     <string name="track_graph_other">Other</string>
     <string name="track_outstanding_total">Outstanding total: %1$s</string>
     <string name="track_quick_create">Quick create</string>
-    <string name="track_no_shortcuts_warning">This track has no active people associated.</string>
+    <string name="track_no_shortcuts_warning">This track has no active debtors associated.</string>
     <string name="track_no_sources_warning">No sources. Create at least one to register.</string>
     <string name="track_go_to_sources">Go to Sources</string>
     <string name="track_search_hint">Search (amount or note)</string>
@@ -61,7 +61,7 @@
     <string name="quick_create_title">%1$s · %2$s</string>
     <string name="amount_label">Amount (CLP)</string>
     <string name="note_label">Note (optional)</string>
-    <string name="filter_people">People</string>
+    <string name="filter_people">Debtors</string>
     <string name="filter_sources">Sources</string>
     <string name="filter_type">Type</string>
     <string name="filter_checked">State</string>
@@ -79,7 +79,7 @@
     <string name="return_search_title">Return search</string>
     <string name="return_selected_sum">Selected: %1$s of %2$s</string>
     <string name="return_no_candidates">No pending registries with amount less than or equal.</string>
-    <string name="return_settle">Settle selected</string>
+    <string name="return_settle">Confirm</string>
     <string name="return_create">Create return</string>
     <string name="match_title">Match suggestion</string>
     <string name="match_covered_msg">The %1$s debt will register as checked.</string>
@@ -92,7 +92,7 @@
     <string name="config_dark_theme">Dark theme</string>
     <string name="config_language">Language</string>
     <string name="config_font">Font</string>
-    <string name="config_font_default">Default</string>
+    <string name="config_font_default">System</string>
     <string name="config_font_serif">Serif</string>
     <string name="config_font_sans">Sans</string>
     <string name="config_font_mono">Mono</string>
@@ -122,4 +122,13 @@
     <string name="conflicts_merge">By field</string>
     <string name="conflicts_local_value">Local: %1$s</string>
     <string name="conflicts_remote_value">Remote: %1$s</string>
+    <string name="filter_dates">Dates</string>
+    <string name="return_pick_debtor">Debtor</string>
+    <string name="match_suggested_row">Suggested return</string>
+    <string name="track_config_title">Track settings</string>
+    <string name="track_config_debtors">Quick-create debtors</string>
+    <string name="track_config_sources">Related sources</string>
+    <string name="track_config_sources_hint">With none selected, every source is offered in quick-create.</string>
+    <string name="track_config_in_use">In use in this track; can\'t be removed.</string>
+    <string name="track_config_last_debtor">A track needs at least one debtor.</string>
 </resources>

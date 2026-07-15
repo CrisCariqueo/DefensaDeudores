@@ -1,7 +1,9 @@
 package com.cristobalcariqueo.defensadedeudores.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,8 +30,10 @@ import com.cristobalcariqueo.defensadedeudores.ui.format.formatClp
 /**
  * One registry row. Rendering rules from SCOPE.md: superseded regs strike
  * through; return regs show negative amounts on the configurable background;
- * checked regs get a check mark. Tapping the amount opens the edit flow (#9).
+ * checked regs get a check mark. Tapping the amount or long-pressing the row
+ * opens the edit flow (#9).
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RegistryRow(
     row: RegistryWithNames,
@@ -50,6 +54,7 @@ fun RegistryRow(
         Modifier
             .fillMaxWidth()
             .background(background)
+            .combinedClickable(onClick = {}, onLongClick = { onAmountClick(row) })
             .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -71,7 +76,9 @@ fun RegistryRow(
                 Icon(
                     Icons.Default.CheckCircle,
                     contentDescription = stringResource(R.string.reg_checked),
-                    tint = MaterialTheme.colorScheme.primary,
+                    // Theme primary washes out on the (configurable, light)
+                    // return background -- return rows always ink in black.
+                    tint = if (isReturn) Color.Black else MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(end = 4.dp),
                 )
             }

@@ -11,6 +11,8 @@ import kotlinx.datetime.Instant
 data class SourceEntity(
     @PrimaryKey val id: String,
     val name: String,
+    /** Swatch key from EntitySwatches; null on rows predating colors. */
+    val color: String? = null,
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long,
     @ColumnInfo(name = "deleted_at") val deletedAt: Long? = null,
@@ -21,6 +23,7 @@ data class SourceEntity(
 fun SourceEntity.toDomain() = Source(
     id = id,
     name = name,
+    color = color,
     createdAt = Instant.fromEpochMilliseconds(createdAt),
     updatedAt = Instant.fromEpochMilliseconds(updatedAt),
     deletedAt = deletedAt?.let(Instant::fromEpochMilliseconds),

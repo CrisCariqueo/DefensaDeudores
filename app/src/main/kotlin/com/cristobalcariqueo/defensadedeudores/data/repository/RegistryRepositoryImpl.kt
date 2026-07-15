@@ -4,11 +4,13 @@ import androidx.room.withTransaction
 import androidx.sqlite.db.SimpleSQLiteQuery
 import com.cristobalcariqueo.defensadedeudores.data.local.DefensaDatabase
 import com.cristobalcariqueo.defensadedeudores.data.local.dao.RegistryDao
+import com.cristobalcariqueo.defensadedeudores.data.local.entity.PersonEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.RegistryEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.toDomain
 import com.cristobalcariqueo.defensadedeudores.domain.model.EditResult
 import com.cristobalcariqueo.defensadedeudores.domain.model.GraphSlice
 import com.cristobalcariqueo.defensadedeudores.domain.model.MatchSuggestion
+import com.cristobalcariqueo.defensadedeudores.domain.model.Person
 import com.cristobalcariqueo.defensadedeudores.domain.model.Registry
 import com.cristobalcariqueo.defensadedeudores.domain.model.RegistryFilter
 import com.cristobalcariqueo.defensadedeudores.domain.model.RegistryType
@@ -63,12 +65,12 @@ class RegistryRepositoryImpl(
 
     override fun observeDebtorSlices(trackId: String): Flow<List<GraphSlice>> =
         dao.observeDebtorSlices(trackId).map { slices ->
-            slices.map { GraphSlice(id = it.id, label = it.name, total = it.total) }
+            slices.map { GraphSlice(id = it.id, label = it.name, total = it.total, color = it.color) }
         }
 
     override fun observeSourceSlices(trackId: String): Flow<List<GraphSlice>> =
         dao.observeSourceSlices(trackId).map { slices ->
-            slices.map { GraphSlice(id = it.id, label = it.name, total = it.total) }
+            slices.map { GraphSlice(id = it.id, label = it.name, total = it.total, color = it.color) }
         }
 
     override fun observeOutstandingTotal(trackId: String): Flow<Long> =
@@ -161,6 +163,9 @@ class RegistryRepositoryImpl(
         dao.applyFullCover(registryId, retReg.id, retReg.amount - amount, nowMs)
         return true
     }
+
+    override suspend fun debtorsWithPending(trackId: String): List<Person> =
+        dao.debtorsWithPending(trackId).map(PersonEntity::toDomain)
 
     override suspend fun uncheckedNormals(trackId: String, personId: String): List<Registry> =
         dao.uncheckedNormals(trackId, personId).map(RegistryEntity::toDomain)

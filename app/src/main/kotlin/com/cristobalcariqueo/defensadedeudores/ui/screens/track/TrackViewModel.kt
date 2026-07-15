@@ -49,9 +49,15 @@ class TrackViewModel(
     val shortcuts: StateFlow<List<Person>> = trackRepository.observeShortcutPeople(trackId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyList())
 
-    /** All sources -- one quick-create button each. */
-    val sources: StateFlow<List<Source>> = sourceRepository.observeSources()
+    /** All sources -- filter sheet + track config. */
+    val allSources: StateFlow<List<Source>> = sourceRepository.observeSources()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyList())
+
+    /** Quick-create sources: the track's related set, or every source when none are related. */
+    val sources: StateFlow<List<Source>> =
+        combine(allSources, trackRepository.observeRelatedSources(trackId)) { all, related ->
+            related.ifEmpty { all }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyList())
 
     /** All people, for the filter sheet -- registries aren't restricted to shortcuts. */
     val allPeople: StateFlow<List<Person>> = personRepository.observePeople()
@@ -167,13 +173,25 @@ class TrackViewModel(
     private val _suggestion = MutableStateFlow<MatchSuggestion?>(null)
     val suggestion: StateFlow<MatchSuggestion?> = _suggestion.asStateFlow()
 
+    /** Detached from the quick-create selection: the modal has its own debtor picker. */
     fun openReturnSearch() {
-        val debtor = selectedDebtorId.value ?: return
         viewModelScope.launch {
+            val debtors = registryRepository.debtorsWithPending(trackId)
+            val preselect = debtors.singleOrNull()?.id
             _returnSearch.value = ReturnSearchState(
-                debtorId = debtor,
-                candidates = registryRepository.uncheckedNormals(trackId, debtor),
+                debtors = debtors,
+                debtorId = preselect,
+                candidates = preselect?.let { registryRepository.uncheckedNormals(trackId, it) }.orEmpty(),
             )
+        }
+    }
+
+    fun selectReturnDebtor(personId: String) {
+        viewModelScope.launch {
+            val candidates = registryRepository.uncheckedNormals(trackId, personId)
+            _returnSearch.update { state ->
+                state?.copy(debtorId = personId, candidates = candidates, selected = emptySet())
+            }
         }
     }
 
@@ -209,12 +227,13 @@ class TrackViewModel(
     /** Path B: persist a retReg, then fire the retroactive match scan. */
     fun createReturnFromSearch() {
         val state = _returnSearch.value ?: return
+        val debtorId = state.debtorId ?: return
         val amount = state.amount ?: return
         if (amount <= 0) return
         viewModelScope.launch {
-            val retReg = registryRepository.createReturn(trackId, state.debtorId, amount, null)
+            val retReg = registryRepository.createReturn(trackId, debtorId, amount, null)
             _returnSearch.value = null
-            scanRetro(retReg.id, state.debtorId)
+            scanRetro(retReg.id, debtorId)
         }
     }
 
@@ -291,9 +310,10 @@ class TrackViewModel(
     }
 }
 
-/** Return-search modal state: entered amount + selectable unchecked normals. */
+/** Return-search modal state: debtor picker + entered amount + selectable unchecked normals. */
 data class ReturnSearchState(
-    val debtorId: String,
+    val debtors: List<Person> = emptyList(),
+    val debtorId: String? = null,
     val amountText: String = "",
     val candidates: List<Registry> = emptyList(),
     val selected: Set<String> = emptySet(),

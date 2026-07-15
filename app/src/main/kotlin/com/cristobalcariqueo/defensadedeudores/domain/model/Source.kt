@@ -6,6 +6,8 @@ import kotlinx.datetime.Instant
 data class Source(
     val id: String,
     val name: String,
+    /** Swatch key (EntitySwatches); null falls back to a hash-picked swatch. */
+    val color: String? = null,
     val createdAt: Instant,
     val updatedAt: Instant,
     val deletedAt: Instant? = null,

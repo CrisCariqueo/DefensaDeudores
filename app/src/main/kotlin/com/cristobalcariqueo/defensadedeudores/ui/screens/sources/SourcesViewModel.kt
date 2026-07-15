@@ -14,16 +14,16 @@ class SourcesViewModel(private val repository: SourceRepository) : ViewModel() {
     val sources: StateFlow<List<Source>> = repository.observeSources()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyList())
 
-    fun add(name: String) {
+    fun add(name: String, color: String?) {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return
-        viewModelScope.launch { repository.create(trimmed) }
+        viewModelScope.launch { repository.create(trimmed, color) }
     }
 
-    fun rename(sourceId: String, name: String) {
+    fun rename(sourceId: String, name: String, color: String?) {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return
-        viewModelScope.launch { repository.update(sourceId, trimmed) }
+        viewModelScope.launch { repository.update(sourceId, trimmed, color) }
     }
 
     /** Hard-deletes if the source has no registries, soft-deletes otherwise. */

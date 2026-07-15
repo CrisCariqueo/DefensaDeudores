@@ -17,6 +17,7 @@ import com.cristobalcariqueo.defensadedeudores.data.local.entity.SyncDeleteEntit
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.SyncStateEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackPersonEntity
+import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackSourceEntity
 
 /**
  * Offline-first source of truth. Mirrors the Supabase schema (DATA_MODEL.md);
@@ -26,6 +27,7 @@ import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackPersonEnti
     entities = [
         TrackEntity::class,
         TrackPersonEntity::class,
+        TrackSourceEntity::class,
         PersonEntity::class,
         SourceEntity::class,
         RegistryEntity::class,
@@ -34,7 +36,7 @@ import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackPersonEnti
         SyncConflictEntity::class,
         SyncDeleteEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class DefensaDatabase : RoomDatabase() {

@@ -2,10 +2,12 @@ package com.cristobalcariqueo.defensadedeudores.data.repository
 
 import com.cristobalcariqueo.defensadedeudores.data.local.dao.TrackDao
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.PersonEntity
+import com.cristobalcariqueo.defensadedeudores.data.local.entity.SourceEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackPersonEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.toDomain
 import com.cristobalcariqueo.defensadedeudores.domain.model.Person
+import com.cristobalcariqueo.defensadedeudores.domain.model.Source
 import com.cristobalcariqueo.defensadedeudores.domain.model.Track
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
@@ -46,4 +48,31 @@ class TrackRepositoryImpl(private val dao: TrackDao) : TrackRepository {
     override suspend fun softDelete(trackId: String) {
         dao.softDelete(trackId, Clock.System.now().toEpochMilliseconds())
     }
+
+    override fun observeRelatedSources(trackId: String): Flow<List<Source>> =
+        dao.observeRelatedSources(trackId).map { entities -> entities.map(SourceEntity::toDomain) }
+
+    override suspend fun addShortcut(trackId: String, personId: String) {
+        dao.addShortcut(trackId, personId, Clock.System.now().toEpochMilliseconds())
+    }
+
+    override suspend fun removeShortcut(trackId: String, personId: String) {
+        dao.removeShortcut(trackId, personId, Clock.System.now().toEpochMilliseconds())
+    }
+
+    override suspend fun addRelatedSource(trackId: String, sourceId: String) {
+        dao.addRelatedSource(trackId, sourceId, Clock.System.now().toEpochMilliseconds())
+    }
+
+    override suspend fun removeRelatedSource(trackId: String, sourceId: String) {
+        dao.removeRelatedSource(trackId, sourceId, Clock.System.now().toEpochMilliseconds())
+    }
+
+    override suspend fun personUsedInTrack(trackId: String, personId: String): Boolean =
+        dao.registryCountForPerson(trackId, personId) > 0
+
+    override suspend fun sourceUsedInTrack(trackId: String, sourceId: String): Boolean =
+        dao.registryCountForSource(trackId, sourceId) > 0
+
+    override suspend fun shortcutCount(trackId: String): Int = dao.shortcutCount(trackId)
 }

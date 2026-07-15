@@ -15,6 +15,8 @@ data class GraphSlice(
     val id: String,
     val label: String,
     val total: Long,
+    /** Owning entity's swatch key -- slices follow the entity color. */
+    val color: String? = null,
 )
 
 /** Outcome of the edit flow (SCOPE.md): same-day edits mutate, older ones supersede. */

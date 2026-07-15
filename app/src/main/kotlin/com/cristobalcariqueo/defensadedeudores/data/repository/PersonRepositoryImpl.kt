@@ -19,11 +19,12 @@ class PersonRepositoryImpl(
     override fun observePeople(): Flow<List<Person>> =
         dao.observeActive().map { entities -> entities.map(PersonEntity::toDomain) }
 
-    override suspend fun create(name: String): Person {
+    override suspend fun create(name: String, color: String?): Person {
         val now = Clock.System.now().toEpochMilliseconds()
         val entity = PersonEntity(
             id = UUID.randomUUID().toString(),
             name = name,
+            color = color,
             createdAt = now,
             updatedAt = now,
         )
@@ -31,8 +32,8 @@ class PersonRepositoryImpl(
         return entity.toDomain()
     }
 
-    override suspend fun update(personId: String, name: String) {
-        dao.rename(personId, name, Clock.System.now().toEpochMilliseconds())
+    override suspend fun update(personId: String, name: String, color: String?) {
+        dao.update(personId, name, color, Clock.System.now().toEpochMilliseconds())
     }
 
     override suspend fun delete(personId: String) {

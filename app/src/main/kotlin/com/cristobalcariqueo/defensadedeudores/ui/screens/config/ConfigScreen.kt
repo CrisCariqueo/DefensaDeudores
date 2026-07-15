@@ -5,6 +5,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -261,6 +263,7 @@ private fun syncStatusLabel(status: SyncStatus): String = when (status) {
     is SyncStatus.Error -> stringResource(R.string.sync_status_error, status.message)
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun <T> ChipSection(
     title: String,
@@ -271,12 +274,13 @@ private fun <T> ChipSection(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(title, style = MaterialTheme.typography.labelLarge)
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        // Wrap whole chips to the next line; a chip's text never breaks mid-word.
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             options.forEach { option ->
                 FilterChip(
                     selected = option == selected,
                     onClick = { onSelect(option) },
-                    label = { Text(label(option)) },
+                    label = { Text(label(option), maxLines = 1) },
                 )
             }
         }

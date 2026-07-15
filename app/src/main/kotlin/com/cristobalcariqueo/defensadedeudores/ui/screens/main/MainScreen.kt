@@ -1,6 +1,8 @@
 package com.cristobalcariqueo.defensadedeudores.ui.screens.main
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,10 +42,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.cristobalcariqueo.defensadedeudores.R
 import com.cristobalcariqueo.defensadedeudores.domain.model.Person
+import com.cristobalcariqueo.defensadedeudores.domain.model.Track
+import com.cristobalcariqueo.defensadedeudores.ui.components.NameEditDialog
 import org.koin.androidx.compose.koinViewModel
 
-/** Track list + People/Sources/Config entry points + FAB to create a track (SCOPE.md screen 1). */
-@OptIn(ExperimentalMaterial3Api::class)
+/** Track list + Debtors/Sources/Config entry points + FAB to create a track (SCOPE.md screen 1). */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MainScreen(
     onOpenTrack: (trackId: String) -> Unit,
@@ -55,6 +59,7 @@ fun MainScreen(
     val tracks by viewModel.tracks.collectAsState()
     val people by viewModel.people.collectAsState()
     var creating by remember { mutableStateOf(false) }
+    var renaming by remember { mutableStateOf<Track?>(null) }
 
     Scaffold(
         topBar = {
@@ -99,7 +104,10 @@ fun MainScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 6.dp)
-                            .clickable { onOpenTrack(track.id) },
+                            .combinedClickable(
+                                onClick = { onOpenTrack(track.id) },
+                                onLongClick = { renaming = track },
+                            ),
                     ) {
                         Text(
                             track.name,
@@ -110,6 +118,18 @@ fun MainScreen(
                 }
             }
         }
+    }
+
+    renaming?.let { track ->
+        NameEditDialog(
+            title = stringResource(R.string.action_rename),
+            initialName = track.name,
+            onConfirm = { name, _ ->
+                viewModel.renameTrack(track.id, name)
+                renaming = null
+            },
+            onDismiss = { renaming = null },
+        )
     }
 
     if (creating) {

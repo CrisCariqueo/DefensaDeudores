@@ -22,23 +22,34 @@ interface TrackRepository {
     fun observeTrack(trackId: String): Flow<Track?>
     /** Quick-pick debtor shortcuts for the track's quick-create area. */
     fun observeShortcutPeople(trackId: String): Flow<List<Person>>
+    /** Related sources for quick-create; empty relation = all sources are offered. */
+    fun observeRelatedSources(trackId: String): Flow<List<Source>>
     suspend fun create(name: String, shortcutPersonIds: List<String>): Track
     suspend fun rename(trackId: String, name: String)
     suspend fun softDelete(trackId: String)
+
+    // -- track config screen membership. Removals are guarded by the *UsedInTrack checks.
+    suspend fun addShortcut(trackId: String, personId: String)
+    suspend fun removeShortcut(trackId: String, personId: String)
+    suspend fun addRelatedSource(trackId: String, sourceId: String)
+    suspend fun removeRelatedSource(trackId: String, sourceId: String)
+    suspend fun personUsedInTrack(trackId: String, personId: String): Boolean
+    suspend fun sourceUsedInTrack(trackId: String, sourceId: String): Boolean
+    suspend fun shortcutCount(trackId: String): Int
 }
 
 interface PersonRepository {
     fun observePeople(): Flow<List<Person>>
-    suspend fun create(name: String): Person
-    suspend fun update(personId: String, name: String)
+    suspend fun create(name: String, color: String?): Person
+    suspend fun update(personId: String, name: String, color: String?)
     /** Hard-deletes if unreferenced by any registry, otherwise soft-deletes. */
     suspend fun delete(personId: String)
 }
 
 interface SourceRepository {
     fun observeSources(): Flow<List<Source>>
-    suspend fun create(name: String): Source
-    suspend fun update(sourceId: String, name: String)
+    suspend fun create(name: String, color: String?): Source
+    suspend fun update(sourceId: String, name: String, color: String?)
     /** Hard-deletes if unreferenced by any registry, otherwise soft-deletes. */
     suspend fun delete(sourceId: String)
 }
@@ -84,6 +95,9 @@ interface RegistryRepository {
      * corrected amount still fully fits.
      */
     suspend fun editAmount(registryId: String, newAmount: Int): EditResult
+
+    /** Debtors owing something in the track -- the return-search debtor selector. */
+    suspend fun debtorsWithPending(trackId: String): List<Person>
 
     /** Debtor's unchecked normal regs in the track (return-search list + retro matching). */
     suspend fun uncheckedNormals(trackId: String, personId: String): List<Registry>

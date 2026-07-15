@@ -14,16 +14,16 @@ class PeopleViewModel(private val repository: PersonRepository) : ViewModel() {
     val people: StateFlow<List<Person>> = repository.observePeople()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyList())
 
-    fun add(name: String) {
+    fun add(name: String, color: String?) {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return
-        viewModelScope.launch { repository.create(trimmed) }
+        viewModelScope.launch { repository.create(trimmed, color) }
     }
 
-    fun rename(personId: String, name: String) {
+    fun rename(personId: String, name: String, color: String?) {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return
-        viewModelScope.launch { repository.update(personId, trimmed) }
+        viewModelScope.launch { repository.update(personId, trimmed, color) }
     }
 
     /** Hard-deletes if the person has no registries, soft-deletes otherwise. */

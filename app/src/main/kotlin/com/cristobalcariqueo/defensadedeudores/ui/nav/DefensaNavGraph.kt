@@ -21,6 +21,7 @@ import com.cristobalcariqueo.defensadedeudores.ui.screens.people.PeopleScreen
 import com.cristobalcariqueo.defensadedeudores.ui.screens.sources.SourcesScreen
 import com.cristobalcariqueo.defensadedeudores.ui.screens.starting.StartingScreen
 import com.cristobalcariqueo.defensadedeudores.ui.screens.track.TrackScreen
+import com.cristobalcariqueo.defensadedeudores.ui.screens.trackconfig.TrackConfigScreen
 import kotlinx.coroutines.flow.map
 import org.koin.compose.koinInject
 
@@ -66,6 +67,17 @@ private fun DefensaNavHost(navController: NavHostController, startDestination: S
                 onBack = { navController.popBackStack() },
                 onOpenPeople = { navController.navigate(Destination.People.route) },
                 onOpenSources = { navController.navigate(Destination.Sources.route) },
+                onOpenTrackConfig = { navController.navigate(Destination.TrackConfig.route(trackId)) },
+            )
+        }
+        composable(Destination.TrackConfig.route) { backStackEntry ->
+            val trackId = backStackEntry.arguments?.getString(Destination.TrackConfig.ARG_TRACK_ID).orEmpty()
+            TrackConfigScreen(
+                trackId = trackId,
+                onBack = { navController.popBackStack() },
+                onDeleted = {
+                    navController.popBackStack(Destination.Main.route, inclusive = false)
+                },
             )
         }
         composable(Destination.People.route) {

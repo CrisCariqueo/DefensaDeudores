@@ -1,7 +1,9 @@
 package com.cristobalcariqueo.defensadedeudores.ui.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,21 +26,28 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.cristobalcariqueo.defensadedeudores.R
+import com.cristobalcariqueo.defensadedeudores.ui.theme.swatchColor
 
-/** One list row: stable id + display name. */
-data class NamedItem(val id: String, val name: String)
+/** One list row: stable id + display name + swatch key. */
+data class NamedItem(val id: String, val name: String, val color: String? = null)
 
 /**
- * Shared list-with-CRUD screen for People and Sources -- both are plain
- * id+name entities with identical flows (SCOPE.md screens 3 and 4).
+ * Shared list-with-CRUD screen for Debtors and Sources -- both are plain
+ * id+name+color entities with identical flows (SCOPE.md screens 3 and 4).
+ * [suggestedColorKey] preselects the least-used swatch when creating.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,14 +56,16 @@ fun NameCrudScreen(
     addDialogTitle: String,
     items: List<NamedItem>,
     emptyMessage: String,
-    onAdd: (String) -> Unit,
-    onRename: (id: String, name: String) -> Unit,
+    suggestedColorKey: String,
+    onAdd: (name: String, color: String?) -> Unit,
+    onRename: (id: String, name: String, color: String?) -> Unit,
     onDelete: (id: String) -> Unit,
     onBack: (() -> Unit)?,
 ) {
     var editing by remember { mutableStateOf<NamedItem?>(null) }
     var adding by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf<NamedItem?>(null) }
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
     Scaffold(
         topBar = {
@@ -86,7 +97,13 @@ fun NameCrudScreen(
             LazyColumn(Modifier.fillMaxSize(), contentPadding = padding) {
                 items(items, key = { it.id }) { item ->
                     ListItem(
-                        headlineContent = { Text(item.name) },
+                        leadingContent = {
+                            ColorDot(
+                                color = swatchColor(item.color, dark, fallbackSeed = item.id),
+                                size = 16,
+                            )
+                        },
+                        headlineContent = { Text(item.name, maxLines = 1) },
                         trailingContent = {
                             IconButton(onClick = { deleting = item }) {
                                 Icon(
@@ -108,8 +125,9 @@ fun NameCrudScreen(
         NameEditDialog(
             title = addDialogTitle,
             initialName = "",
-            onConfirm = { name ->
-                onAdd(name)
+            initialColor = suggestedColorKey,
+            onConfirm = { name, color ->
+                onAdd(name, color)
                 adding = false
             },
             onDismiss = { adding = false },
@@ -120,8 +138,9 @@ fun NameCrudScreen(
         NameEditDialog(
             title = stringResource(R.string.dialog_edit_title),
             initialName = item.name,
-            onConfirm = { name ->
-                onRename(item.id, name)
+            initialColor = item.color,
+            onConfirm = { name, color ->
+                onRename(item.id, name, color)
                 editing = null
             },
             onDismiss = { editing = null },
@@ -150,29 +169,42 @@ fun NameCrudScreen(
     }
 }
 
-/** Add/rename dialog shared by [NameCrudScreen] and the Starting screen. */
+/**
+ * Add/rename dialog shared by [NameCrudScreen] and the Starting screen. The
+ * name field autofocuses so the keyboard opens with the dialog. Pass
+ * [initialColor] to show the swatch picker (null hides it).
+ */
 @Composable
 fun NameEditDialog(
     title: String,
     initialName: String,
-    onConfirm: (String) -> Unit,
+    onConfirm: (name: String, color: String?) -> Unit,
     onDismiss: () -> Unit,
+    initialColor: String? = null,
 ) {
     var name by remember { mutableStateOf(initialName) }
+    var color by remember { mutableStateOf(initialColor) }
+    val focusRequester = remember { FocusRequester() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text(stringResource(R.string.label_name)) },
-                singleLine = true,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.label_name)) },
+                    singleLine = true,
+                    modifier = Modifier.focusRequester(focusRequester),
+                )
+                if (initialColor != null) {
+                    SwatchRow(selectedKey = color, onSelect = { color = it })
+                }
+            }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(name) }, enabled = name.isNotBlank()) {
+            TextButton(onClick = { onConfirm(name, color) }, enabled = name.isNotBlank()) {
                 Text(stringResource(R.string.action_save))
             }
         },
@@ -180,4 +212,6 @@ fun NameEditDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     )
+
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
 }

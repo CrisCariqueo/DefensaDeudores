@@ -23,6 +23,8 @@ create table people (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id) on delete cascade,
     name text not null,
+    -- swatch key from the app's fixed palette (e.g. 'blue'); null = auto
+    color text,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
     deleted_at timestamptz
@@ -37,6 +39,8 @@ create table sources (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id) on delete cascade,
     name text not null,
+    -- swatch key from the app's fixed palette (e.g. 'blue'); null = auto
+    color text,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
     deleted_at timestamptz
@@ -55,6 +59,19 @@ create table track_people (
 
 alter table track_people enable row level security;
 create policy "track_people_owner" on track_people for all
+    using (exists (select 1 from tracks t where t.id = track_id and t.user_id = auth.uid()))
+    with check (exists (select 1 from tracks t where t.id = track_id and t.user_id = auth.uid()));
+
+-- ============================================================ track_sources (optional relation)
+-- Empty set for a track = all sources offered in its quick-create area.
+create table track_sources (
+    track_id uuid not null references tracks(id) on delete cascade,
+    source_id uuid not null references sources(id) on delete cascade,
+    primary key (track_id, source_id)
+);
+
+alter table track_sources enable row level security;
+create policy "track_sources_owner" on track_sources for all
     using (exists (select 1 from tracks t where t.id = track_id and t.user_id = auth.uid()))
     with check (exists (select 1 from tracks t where t.id = track_id and t.user_id = auth.uid()));
 
