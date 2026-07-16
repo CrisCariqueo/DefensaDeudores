@@ -1,6 +1,8 @@
 package com.cristobalcariqueo.defensadedeudores
 
+import android.graphics.Color
 import android.os.Bundle
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -38,8 +40,23 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
+            val dark = when (settings?.theme) {
+                "dark" -> true
+                "light" -> false
+                else -> isSystemInDarkTheme()
+            }
+
+            // Status/navigation bar icons must follow the app theme (which can
+            // diverge from the system theme), not the system default.
+            LaunchedEffect(dark) {
+                val style =
+                    if (dark) SystemBarStyle.dark(Color.TRANSPARENT)
+                    else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+            }
+
             DefensaTheme(
-                darkTheme = settings?.darkTheme ?: isSystemInDarkTheme(),
+                darkTheme = dark,
                 fontFamily = fontFamilyFor(settings?.font ?: "default"),
             ) {
                 DefensaNavGraph()

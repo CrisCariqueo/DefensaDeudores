@@ -33,7 +33,7 @@ complexity:
     ignoreAnnotatedFunctions: ['Composable']
     # Registry DAO/repo/viewmodel surface is spec-driven (filters, matching,
     # edit flow all live on one entity) -- splitting would hurt cohesion
-    thresholdInClasses: 25
+    thresholdInClasses: 30
     # SyncDao spans five tables' bookkeeping by design
     thresholdInInterfaces: 40
     # DTO files pair each shape with its two mappers

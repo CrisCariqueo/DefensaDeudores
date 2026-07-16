@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
@@ -82,7 +83,8 @@ class RegistryRepositoryImpl(
         sourceId: String,
         amount: Int,
         note: String?,
-    ): Registry = insert(trackId, personId, sourceId, amount, RegistryEntity.TYPE_NORMAL, note)
+        date: LocalDate?,
+    ): Registry = insert(trackId, personId, sourceId, amount, RegistryEntity.TYPE_NORMAL, note, date)
 
     override suspend fun createReturn(
         trackId: String,
@@ -90,6 +92,24 @@ class RegistryRepositoryImpl(
         amount: Int,
         note: String?,
     ): Registry = insert(trackId, personId, null, amount, RegistryEntity.TYPE_RETURN, note)
+
+    override suspend fun updateDetails(
+        registryId: String,
+        note: String?,
+        sourceId: String?,
+        date: LocalDate,
+    ) {
+        val reg = dao.getById(registryId) ?: return
+        // Returns have no source; a normal reg must keep one.
+        val newSource = if (reg.type == RegistryEntity.TYPE_NORMAL) sourceId ?: reg.sourceId else null
+        dao.updateDetails(
+            id = registryId,
+            note = note?.take(NOTE_MAX_LENGTH)?.ifBlank { null },
+            sourceId = newSource,
+            date = date.toEpochDays(),
+            now = Clock.System.now().toEpochMilliseconds(),
+        )
+    }
 
     override suspend fun editAmount(registryId: String, newAmount: Int): EditResult {
         require(newAmount > 0) { "Registry amounts are always positive" }
@@ -167,6 +187,9 @@ class RegistryRepositoryImpl(
     override suspend fun debtorsWithPending(trackId: String): List<Person> =
         dao.debtorsWithPending(trackId).map(PersonEntity::toDomain)
 
+    override suspend fun uncheckedNormalsAll(trackId: String): List<Registry> =
+        dao.uncheckedNormalsAll(trackId).map(RegistryEntity::toDomain)
+
     override suspend fun uncheckedNormals(trackId: String, personId: String): List<Registry> =
         dao.uncheckedNormals(trackId, personId).map(RegistryEntity::toDomain)
 
@@ -208,6 +231,7 @@ class RegistryRepositoryImpl(
         }
     }
 
+    @Suppress("LongParameterList") // entity-constructor mirror, one param per column
     private suspend fun insert(
         trackId: String,
         personId: String,
@@ -215,6 +239,7 @@ class RegistryRepositoryImpl(
         amount: Int,
         type: Int,
         note: String?,
+        date: LocalDate? = null,
     ): Registry {
         require(amount > 0) { "Registry amounts are always positive" }
         val now = Clock.System.now()
@@ -227,7 +252,7 @@ class RegistryRepositoryImpl(
             type = type,
             checked = false,
             note = note?.take(NOTE_MAX_LENGTH),
-            date = Clock.System.todayIn(TimeZone.currentSystemDefault()).toEpochDays(),
+            date = (date ?: Clock.System.todayIn(TimeZone.currentSystemDefault())).toEpochDays(),
             createdAt = now.toEpochMilliseconds(),
             updatedAt = now.toEpochMilliseconds(),
         )
@@ -264,11 +289,25 @@ class RegistryRepositoryImpl(
             clauses += "r.checked = ?"
             args += if (it) 1 else 0
         }
-        if (filter.query.isNotBlank()) {
-            clauses += "(CAST(r.amount AS TEXT) LIKE ? OR r.note LIKE ?)"
-            val like = "%${filter.query.trim()}%"
-            args += like
-            args += like
+        filter.amountMin?.let {
+            clauses += "r.amount >= ?"
+            args += it
+        }
+        filter.amountMax?.let {
+            clauses += "r.amount <= ?"
+            args += it
+        }
+        val query = filter.query.trim()
+        if (query.isNotEmpty()) {
+            val numeric = query.toIntOrNull()
+            if (numeric != null) {
+                // Numeric search = "what fits in this amount": regs costing at most it.
+                clauses += "r.amount <= ?"
+                args += numeric
+            } else {
+                clauses += "r.note LIKE ?"
+                args += "%$query%"
+            }
         }
         return clauses.joinToString(" AND ") to args
     }

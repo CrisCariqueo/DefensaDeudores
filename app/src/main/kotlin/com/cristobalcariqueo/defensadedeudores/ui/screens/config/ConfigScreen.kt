@@ -28,7 +28,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -51,6 +50,7 @@ import org.koin.androidx.compose.koinViewModel
 
 private val FONT_OPTIONS = listOf("default", "serif", "sans", "mono")
 private val LANGUAGE_OPTIONS = listOf("es-CL", "en-US")
+private val THEME_OPTIONS = listOf("system", "dark", "light")
 private val RETURN_BG_OPTIONS = listOf(
     "#FFF3CD", "#FFE0E0", "#DDEBFF", "#DFF5DF", "#F3E0FF", "#FFE2C4",
 )
@@ -95,17 +95,13 @@ fun ConfigScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    stringResource(R.string.config_dark_theme),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.weight(1f),
-                )
-                Switch(checked = current.darkTheme, onCheckedChange = viewModel::setDarkTheme)
-            }
+            ChipSection(
+                title = stringResource(R.string.config_theme),
+                options = THEME_OPTIONS,
+                selected = current.theme,
+                label = { themeLabel(it) },
+                onSelect = viewModel::setTheme,
+            )
 
             ChipSection(
                 title = stringResource(R.string.config_language),
@@ -293,4 +289,11 @@ private fun fontLabel(key: String): String = when (key) {
     "sans" -> stringResource(R.string.config_font_sans)
     "mono" -> stringResource(R.string.config_font_mono)
     else -> stringResource(R.string.config_font_default)
+}
+
+@Composable
+private fun themeLabel(key: String): String = when (key) {
+    "dark" -> stringResource(R.string.theme_dark)
+    "light" -> stringResource(R.string.theme_light)
+    else -> stringResource(R.string.theme_system)
 }

@@ -1,9 +1,11 @@
 package com.cristobalcariqueo.defensadedeudores.ui.screens.trackconfig
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,7 +13,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -31,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
@@ -42,7 +47,11 @@ import com.cristobalcariqueo.defensadedeudores.ui.theme.swatchColor
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-/** Per-track settings: rename/delete + debtor and related-source membership (v1.1). */
+/**
+ * Per-track settings (v0.2.0): rename (pencil beside the name), delete, and
+ * draft membership editing persisted by Apply. Warns when leaving with zero
+ * quick-create debtors.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TrackConfigScreen(
@@ -54,26 +63,28 @@ fun TrackConfigScreen(
     val track by viewModel.track.collectAsState()
     val allPeople by viewModel.allPeople.collectAsState()
     val allSources by viewModel.allSources.collectAsState()
-    val shortcutIds by viewModel.shortcutIds.collectAsState()
-    val relatedSourceIds by viewModel.relatedSourceIds.collectAsState()
+    val draftDebtors by viewModel.draftDebtors.collectAsState()
+    val draftSources by viewModel.draftSources.collectAsState()
+    val hasChanges by viewModel.hasChanges.collectAsState()
     val removalBlock by viewModel.removalBlock.collectAsState()
 
     var renaming by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
+    var leavingWithoutDebtors by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
+    val requestExit = {
+        if (draftDebtors.isEmpty()) leavingWithoutDebtors = true else onBack()
+    }
+    BackHandler { requestExit() }
+
     val inUseMsg = stringResource(R.string.track_config_in_use)
-    val lastDebtorMsg = stringResource(R.string.track_config_last_debtor)
     LaunchedEffect(removalBlock) {
-        val block = removalBlock ?: return@LaunchedEffect
-        snackbar.showSnackbar(
-            when (block) {
-                RemovalBlock.IN_USE -> inUseMsg
-                RemovalBlock.LAST_DEBTOR -> lastDebtorMsg
-            },
-        )
-        viewModel.clearRemovalBlock()
+        if (removalBlock != null) {
+            snackbar.showSnackbar(inUseMsg)
+            viewModel.clearRemovalBlock()
+        }
     }
 
     Scaffold(
@@ -81,7 +92,7 @@ fun TrackConfigScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.track_config_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = requestExit) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.cd_back),
@@ -100,58 +111,48 @@ fun TrackConfigScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(track?.name.orEmpty(), style = MaterialTheme.typography.titleLarge)
-
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    stringResource(R.string.track_config_debtors),
-                    style = MaterialTheme.typography.labelLarge,
+                    track?.name.orEmpty(),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f),
                 )
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    allPeople.forEach { person ->
-                        FilterChip(
-                            selected = person.id in shortcutIds,
-                            onClick = { viewModel.toggleDebtor(person.id) },
-                            leadingIcon = {
-                                ColorDot(swatchColor(person.color, dark, fallbackSeed = person.id))
-                            },
-                            label = { Text(person.name, maxLines = 1) },
-                        )
-                    }
+                IconButton(onClick = { renaming = true }) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = stringResource(R.string.action_rename),
+                    )
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    stringResource(R.string.track_config_sources),
-                    style = MaterialTheme.typography.labelLarge,
-                )
-                Text(
-                    stringResource(R.string.track_config_sources_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    allSources.forEach { source ->
-                        FilterChip(
-                            selected = source.id in relatedSourceIds,
-                            onClick = { viewModel.toggleSource(source.id) },
-                            leadingIcon = {
-                                ColorDot(swatchColor(source.color, dark, fallbackSeed = source.id))
-                            },
-                            label = { Text(source.name, maxLines = 1) },
-                        )
-                    }
-                }
+            MembershipSection(
+                title = stringResource(R.string.track_config_debtors),
+                hint = null,
+                items = allPeople.map { Triple(it.id, it.name, it.color) },
+                selected = draftDebtors,
+                dark = dark,
+                onToggle = viewModel::toggleDebtor,
+                onClear = viewModel::clearDebtors,
+            )
+
+            MembershipSection(
+                title = stringResource(R.string.track_config_sources),
+                hint = stringResource(R.string.track_config_sources_hint),
+                items = allSources.map { Triple(it.id, it.name, it.color) },
+                selected = draftSources,
+                dark = dark,
+                onToggle = viewModel::toggleSource,
+                onClear = viewModel::clearSources,
+            )
+
+            Button(
+                onClick = viewModel::apply,
+                enabled = hasChanges,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.filter_apply))
             }
 
-            OutlinedButton(onClick = { renaming = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.action_rename))
-            }
             OutlinedButton(
                 onClick = { deleting = true },
                 modifier = Modifier.fillMaxWidth(),
@@ -192,5 +193,68 @@ fun TrackConfigScreen(
                 }
             },
         )
+    }
+
+    if (leavingWithoutDebtors) {
+        AlertDialog(
+            onDismissRequest = { leavingWithoutDebtors = false },
+            title = { Text(stringResource(R.string.track_config_title)) },
+            text = { Text(stringResource(R.string.track_config_no_debtors)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        leavingWithoutDebtors = false
+                        onBack()
+                    },
+                ) { Text(stringResource(R.string.action_leave)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { leavingWithoutDebtors = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MembershipSection(
+    title: String,
+    hint: String?,
+    items: List<Triple<String, String, String?>>,
+    selected: Set<String>,
+    dark: Boolean,
+    onToggle: (String) -> Unit,
+    onClear: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                title,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onClear, enabled = selected.isNotEmpty()) {
+                Text(stringResource(R.string.filter_clear))
+            }
+        }
+        if (hint != null) {
+            Text(
+                hint,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            items.forEach { (id, name, color) ->
+                FilterChip(
+                    selected = id in selected,
+                    onClick = { onToggle(id) },
+                    leadingIcon = { ColorDot(swatchColor(color, dark, fallbackSeed = id)) },
+                    label = { Text(name, maxLines = 1) },
+                )
+            }
+        }
     }
 }

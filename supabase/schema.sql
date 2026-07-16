@@ -116,7 +116,7 @@ create table settings (
     user_id uuid primary key references auth.users(id) on delete cascade,
     font text not null default 'default',
     language text not null default 'es-CL' check (language in ('es-CL', 'en-US')),
-    dark_theme boolean not null default true,
+    theme text not null default 'system' check (theme in ('system', 'dark', 'light')),
     return_bg_color text not null default '#FFF3CD',
     recent_table_size smallint not null default 50 check (recent_table_size in (20, 30, 40, 50, 60, 70)),
     historical_table_size smallint not null default 100 check (historical_table_size in (50, 75, 100, 125, 150)),

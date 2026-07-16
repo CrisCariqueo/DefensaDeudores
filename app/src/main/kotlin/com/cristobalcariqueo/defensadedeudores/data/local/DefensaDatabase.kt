@@ -36,7 +36,7 @@ import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackSourceEnti
         SyncConflictEntity::class,
         SyncDeleteEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class DefensaDatabase : RoomDatabase() {

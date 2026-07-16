@@ -11,6 +11,7 @@ import com.cristobalcariqueo.defensadedeudores.domain.model.Settings
 import com.cristobalcariqueo.defensadedeudores.domain.model.Source
 import com.cristobalcariqueo.defensadedeudores.domain.model.Track
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.LocalDate
 
 /**
  * Contracts only -- implementations land with their respective feature tasks
@@ -77,12 +78,14 @@ interface RegistryRepository {
     /** Net outstanding for the track: unchecked normal minus unchecked returns. */
     fun observeOutstandingTotal(trackId: String): Flow<Long>
 
+    /** [date] null = today (quick-create); the detailed dialog passes any date. */
     suspend fun createNormal(
         trackId: String,
         personId: String,
         sourceId: String,
         amount: Int,
         note: String?,
+        date: LocalDate? = null,
     ): Registry
 
     /** Returns have no source (schema: source_id null for type = return). */
@@ -96,8 +99,14 @@ interface RegistryRepository {
      */
     suspend fun editAmount(registryId: String, newAmount: Int): EditResult
 
+    /** In-place edit of the non-amount fields (no supersede semantics). Source only applies to normal regs. */
+    suspend fun updateDetails(registryId: String, note: String?, sourceId: String?, date: LocalDate)
+
     /** Debtors owing something in the track -- the return-search debtor selector. */
     suspend fun debtorsWithPending(trackId: String): List<Person>
+
+    /** All unchecked normal regs in the track -- return-search before a debtor is picked. */
+    suspend fun uncheckedNormalsAll(trackId: String): List<Registry>
 
     /** Debtor's unchecked normal regs in the track (return-search list + retro matching). */
     suspend fun uncheckedNormals(trackId: String, personId: String): List<Registry>

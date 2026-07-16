@@ -17,6 +17,7 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -122,14 +123,18 @@ fun FilterSheet(
     var pickingTo by remember { mutableStateOf(false) }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(stringResource(R.string.track_filters), style = MaterialTheme.typography.titleMedium)
+        Column {
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    stringResource(R.string.track_filters),
+                    style = MaterialTheme.typography.titleMedium,
+                )
 
             Text(stringResource(R.string.filter_people), style = MaterialTheme.typography.labelLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -209,14 +214,46 @@ fun FilterSheet(
                 }
             }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = draft.amountMin?.toString().orEmpty(),
+                        onValueChange = { new ->
+                            draft = draft.copy(amountMin = new.filter(Char::isDigit).toIntOrNull())
+                        },
+                        label = { Text(stringResource(R.string.filter_amount_min)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = draft.amountMax?.toString().orEmpty(),
+                        onValueChange = { new ->
+                            draft = draft.copy(amountMax = new.filter(Char::isDigit).toIntOrNull())
+                        },
+                        label = { Text(stringResource(R.string.filter_amount_max)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+
                 OutlinedButton(
                     onClick = { draft = RegistryFilter(query = draft.query) },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                 ) { Text(stringResource(R.string.filter_clear)) }
+            }
+
+            // Actions stay visible while the filter list scrolls.
+            HorizontalDivider()
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            ) {
+                OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.action_cancel))
+                }
                 Button(onClick = { onApply(draft) }, modifier = Modifier.weight(1f)) {
                     Text(stringResource(R.string.filter_apply))
                 }
@@ -326,10 +363,9 @@ fun ReturnSearchDialog(
                     label = { Text(stringResource(R.string.amount_label)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    enabled = debtorPicked,
                     modifier = Modifier.focusRequester(focusRequester),
                 )
-                if (debtorPicked && amount != null && amount > 0) {
+                if (amount != null && amount > 0) {
                     Text(
                         stringResource(
                             R.string.return_selected_sum,
@@ -348,6 +384,7 @@ fun ReturnSearchDialog(
                                 style = MaterialTheme.typography.bodyMedium,
                             )
                         }
+                        val debtorNames = state.debtors.associate { it.id to it.name }
                         state.eligible.forEach { reg ->
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -363,7 +400,12 @@ fun ReturnSearchDialog(
                                         style = MaterialTheme.typography.bodyMedium,
                                     )
                                     Text(
-                                        listOfNotNull(reg.date.toString(), reg.note).joinToString(" · "),
+                                        listOfNotNull(
+                                            // Debtor shown while searching across all of them.
+                                            debtorNames[reg.personId].takeIf { !debtorPicked },
+                                            reg.date.toString(),
+                                            reg.note,
+                                        ).joinToString(" · "),
                                         style = MaterialTheme.typography.bodySmall,
                                     )
                                 }
@@ -391,7 +433,7 @@ fun ReturnSearchDialog(
         },
     )
 
-    LaunchedEffect(debtorPicked) { if (debtorPicked) focusRequester.requestFocus() }
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
 }
 
 /**
@@ -554,3 +596,177 @@ private fun Set<String>.toggle(id: String): Set<String> =
 /** DatePicker millis are UTC-midnight-based; convert in UTC to avoid off-by-one days. */
 private fun Long.toUtcLocalDate(): LocalDate =
     Instant.fromEpochMilliseconds(this).toLocalDateTime(TimeZone.UTC).date
+
+/**
+ * Detailed create (v0.2.0): any active debtor (not just track shortcuts), any
+ * offered source, amount, optional note, any date. Same forward-match scan as
+ * quick-create afterwards.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun DetailedCreateDialog(
+    people: List<Person>,
+    sources: List<Source>,
+    onConfirm: (personId: String, sourceId: String, amount: Int, note: String?, date: LocalDate) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var personId by remember { mutableStateOf<String?>(null) }
+    var sourceId by remember { mutableStateOf<String?>(null) }
+    var amountText by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf("") }
+    var date by remember { mutableStateOf(Clock.System.todayIn(TimeZone.currentSystemDefault())) }
+    var pickingDate by remember { mutableStateOf(false) }
+    val amount = amountText.toIntOrNull()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.detailed_create_title)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(stringResource(R.string.filter_people), style = MaterialTheme.typography.labelLarge)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    people.forEach { person ->
+                        FilterChip(
+                            selected = person.id == personId,
+                            onClick = { personId = person.id },
+                            label = { Text(person.name, maxLines = 1) },
+                        )
+                    }
+                }
+                Text(stringResource(R.string.filter_sources), style = MaterialTheme.typography.labelLarge)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    sources.forEach { source ->
+                        FilterChip(
+                            selected = source.id == sourceId,
+                            onClick = { sourceId = source.id },
+                            label = { Text(source.name, maxLines = 1) },
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value = amountText,
+                    onValueChange = { new -> amountText = new.filter { it.isDigit() } },
+                    label = { Text(stringResource(R.string.amount_label)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { if (it.length <= NOTE_MAX_LENGTH) note = it },
+                    label = { Text(stringResource(R.string.note_label)) },
+                    singleLine = true,
+                )
+                Text(stringResource(R.string.label_date), style = MaterialTheme.typography.labelLarge)
+                OutlinedButton(onClick = { pickingDate = true }) { Text(date.toString()) }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm(personId!!, sourceId!!, amount!!, note.ifBlank { null }, date)
+                },
+                enabled = personId != null && sourceId != null && amount != null && amount > 0,
+            ) { Text(stringResource(R.string.action_save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+    )
+
+    if (pickingDate) {
+        FilterDatePicker(
+            initial = date,
+            onPicked = { picked -> picked?.let { date = it } },
+            onDismiss = { pickingDate = false },
+        )
+    }
+}
+
+/**
+ * Full edit via row long-press (v0.2.0). Amount keeps the supersede/rematch
+ * rules; note, source and date update in place on the surviving row. Returns
+ * are not editable here (openFullEdit guards to normal regs).
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun EditRegistryDialog(
+    row: RegistryWithNames,
+    sources: List<Source>,
+    onConfirm: (amount: Int, note: String?, sourceId: String?, date: LocalDate) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val reg = row.registry
+    var amountText by remember { mutableStateOf(reg.amount.toString()) }
+    var note by remember { mutableStateOf(reg.note.orEmpty()) }
+    var sourceId by remember { mutableStateOf(reg.sourceId) }
+    var date by remember { mutableStateOf(reg.date) }
+    var pickingDate by remember { mutableStateOf(false) }
+    val amount = amountText.toIntOrNull()
+    val createdToday = reg.createdAt
+        .toLocalDateTime(TimeZone.currentSystemDefault()).date ==
+        Clock.System.todayIn(TimeZone.currentSystemDefault())
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.edit_registry_title)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedTextField(
+                    value = amountText,
+                    onValueChange = { new -> amountText = new.filter { it.isDigit() } },
+                    label = { Text(stringResource(R.string.amount_label)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                )
+                if (!createdToday && amount != null && amount != reg.amount) {
+                    Text(
+                        stringResource(R.string.edit_supersede_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                }
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { if (it.length <= NOTE_MAX_LENGTH) note = it },
+                    label = { Text(stringResource(R.string.note_label)) },
+                    singleLine = true,
+                )
+                Text(stringResource(R.string.filter_sources), style = MaterialTheme.typography.labelLarge)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    sources.forEach { source ->
+                        FilterChip(
+                            selected = source.id == sourceId,
+                            onClick = { sourceId = source.id },
+                            label = { Text(source.name, maxLines = 1) },
+                        )
+                    }
+                }
+                Text(stringResource(R.string.label_date), style = MaterialTheme.typography.labelLarge)
+                OutlinedButton(onClick = { pickingDate = true }) { Text(date.toString()) }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(amount!!, note.ifBlank { null }, sourceId, date) },
+                enabled = amount != null && amount > 0,
+            ) { Text(stringResource(R.string.action_save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+    )
+
+    if (pickingDate) {
+        FilterDatePicker(
+            initial = date,
+            onPicked = { picked -> picked?.let { date = it } },
+            onDismiss = { pickingDate = false },
+        )
+    }
+}

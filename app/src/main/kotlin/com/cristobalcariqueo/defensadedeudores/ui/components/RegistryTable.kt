@@ -30,8 +30,8 @@ import com.cristobalcariqueo.defensadedeudores.ui.format.formatClp
 /**
  * One registry row. Rendering rules from SCOPE.md: superseded regs strike
  * through; return regs show negative amounts on the configurable background;
- * checked regs get a check mark. Tapping the amount or long-pressing the row
- * opens the edit flow (#9).
+ * checked regs get a check mark. Tapping the amount opens the amount-only
+ * edit; long-pressing the row opens the full edit (v0.2.0).
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -39,6 +39,7 @@ fun RegistryRow(
     row: RegistryWithNames,
     returnBgColor: String,
     onAmountClick: (RegistryWithNames) -> Unit,
+    onLongPress: (RegistryWithNames) -> Unit,
 ) {
     val reg = row.registry
     val isReturn = reg.type == RegistryType.RETURN
@@ -54,7 +55,7 @@ fun RegistryRow(
         Modifier
             .fillMaxWidth()
             .background(background)
-            .combinedClickable(onClick = {}, onLongClick = { onAmountClick(row) })
+            .combinedClickable(onClick = {}, onLongClick = { onLongPress(row) })
             .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

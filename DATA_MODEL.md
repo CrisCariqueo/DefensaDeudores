@@ -92,7 +92,7 @@ Click an amount → edit popup. Check `created_at`, not `date` (avoids backdatin
 | user_id | uuid pk fk auth.users | |
 | font | text | |
 | language | text | locale code, `es-CL` or `en-US` for v1 |
-| dark_theme | bool | default true |
+| theme | text | `system`, `dark` or `light`; default `system` (v0.2.0, replaced boolean dark_theme) |
 | return_bg_color | text | hex, configurable bg for retRegs in tables |
 | recent_table_size | smallint | default 50, one of 20/30/40/50/60/70 |
 | historical_table_size | smallint | default 100, one of 50/75/100/125/150 |

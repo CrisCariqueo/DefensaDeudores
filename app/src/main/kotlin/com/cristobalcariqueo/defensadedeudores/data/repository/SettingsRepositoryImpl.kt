@@ -18,7 +18,7 @@ class SettingsRepositoryImpl(private val dao: SettingsDao) : SettingsRepository 
         dao.updateValues(
             font = settings.font,
             language = settings.language,
-            darkTheme = settings.darkTheme,
+            theme = settings.theme,
             returnBgColor = settings.returnBgColor,
             recentTableSize = settings.recentTableSize,
             historicalTableSize = settings.historicalTableSize,

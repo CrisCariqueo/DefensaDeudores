@@ -89,7 +89,6 @@
     <string name="edit_amount_title">Edit amount</string>
     <string name="edit_supersede_note">This will log a correction; the original registry is not edited directly.</string>
 
-    <string name="config_dark_theme">Dark theme</string>
     <string name="config_language">Language</string>
     <string name="config_font">Font</string>
     <string name="config_font_default">System</string>
@@ -131,4 +130,15 @@
     <string name="track_config_sources_hint">With none selected, every source is offered in quick-create.</string>
     <string name="track_config_in_use">In use in this track; can\'t be removed.</string>
     <string name="track_config_last_debtor">A track needs at least one debtor.</string>
+    <string name="config_theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+    <string name="filter_amount_min">Min amount</string>
+    <string name="filter_amount_max">Max amount</string>
+    <string name="detailed_create_title">Detailed registry</string>
+    <string name="label_date">Date</string>
+    <string name="edit_registry_title">Edit registry</string>
+    <string name="track_config_no_debtors">No quick-create debtors selected. Leave anyway?</string>
+    <string name="action_leave">Leave</string>
 </resources>

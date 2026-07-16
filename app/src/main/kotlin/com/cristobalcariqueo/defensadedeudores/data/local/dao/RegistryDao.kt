@@ -46,6 +46,26 @@ interface RegistryDao {
     )
     suspend fun debtorsWithPending(trackId: String): List<PersonEntity>
 
+    /** All unchecked normal regs in this track -- return-search before a debtor is picked. */
+    @Query(
+        """
+        SELECT * FROM registries
+        WHERE track_id = :trackId
+          AND type = ${RegistryEntity.TYPE_NORMAL} AND checked = 0 AND deleted_at IS NULL
+        ORDER BY date DESC, created_at DESC
+        """,
+    )
+    suspend fun uncheckedNormalsAll(trackId: String): List<RegistryEntity>
+
+    /** Full-edit in-place fields; amount goes through the supersede flow instead. */
+    @Query(
+        """
+        UPDATE registries SET note = :note, source_id = :sourceId, date = :date,
+            updated_at = :now, dirty = 1 WHERE id = :id
+        """,
+    )
+    suspend fun updateDetails(id: String, note: String?, sourceId: String?, date: Int, now: Long)
+
     /** Debtor's unchecked normal regs in this track, for return-search + retro matching. */
     @Query(
         """
