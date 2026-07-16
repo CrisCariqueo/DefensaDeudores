@@ -24,7 +24,7 @@ interface SettingsDao {
     /** Config-screen write path: touches the user fields only, preserving sync metadata. */
     @Query(
         """
-        UPDATE settings SET font = :font, language = :language, dark_theme = :darkTheme,
+        UPDATE settings SET font = :font, language = :language, theme = :theme,
             return_bg_color = :returnBgColor, recent_table_size = :recentTableSize,
             historical_table_size = :historicalTableSize, dirty = 1
         WHERE id = ${SettingsEntity.SINGLETON_ID}
@@ -33,7 +33,7 @@ interface SettingsDao {
     suspend fun updateValues(
         font: String,
         language: String,
-        darkTheme: Boolean,
+        theme: String,
         returnBgColor: String,
         recentTableSize: Int,
         historicalTableSize: Int,

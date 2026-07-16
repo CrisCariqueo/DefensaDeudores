@@ -23,12 +23,22 @@ People surfaced as quick-pick debtor shortcuts in a track's quick-create area. D
 | person_id | uuid fk people.id | |
 | PK | (track_id, person_id) | |
 
+## track_sources (optional relation, v1.1)
+Sources offered in a track's quick-create area. An EMPTY set means every source is offered; once ≥1 row exists, only the related ones show. Does NOT restrict which sources registries may use. Managed from the per-track settings screen; a source with registries in the track can't be unrelated.
+
+| col | type | notes |
+|---|---|---|
+| track_id | uuid fk tracks.id | |
+| source_id | uuid fk sources.id | |
+| PK | (track_id, source_id) | |
+
 ## people
 | col | type | notes |
 |---|---|---|
 | id | uuid pk | |
 | user_id | uuid fk auth.users | |
 | name | text | debtor's name, no uniqueness constraint |
+| color | text, nullable | swatch key from the app's fixed 12-color palette (v1.1); null = auto by id hash |
 | created_at | timestamptz | default now() |
 | updated_at | timestamptz | default now(), bumped on every write |
 | deleted_at | timestamptz, nullable | soft delete if referenced by ≥1 registry; hard-delete the row instead if zero references |
@@ -39,6 +49,7 @@ People surfaced as quick-pick debtor shortcuts in a track's quick-create area. D
 | id | uuid pk | |
 | user_id | uuid fk auth.users | |
 | name | text | global tag, e.g. bank name, no uniqueness constraint |
+| color | text, nullable | swatch key from the app's fixed 12-color palette (v1.1); null = auto by id hash |
 | created_at | timestamptz | default now() |
 | updated_at | timestamptz | default now(), bumped on every write |
 | deleted_at | timestamptz, nullable | soft delete if referenced by ≥1 registry; hard-delete the row instead if zero references |
@@ -81,7 +92,7 @@ Click an amount → edit popup. Check `created_at`, not `date` (avoids backdatin
 | user_id | uuid pk fk auth.users | |
 | font | text | |
 | language | text | locale code, `es-CL` or `en-US` for v1 |
-| dark_theme | bool | default true |
+| theme | text | `system`, `dark` or `light`; default `system` (v0.2.0, replaced boolean dark_theme) |
 | return_bg_color | text | hex, configurable bg for retRegs in tables |
 | recent_table_size | smallint | default 50, one of 20/30/40/50/60/70 |
 | historical_table_size | smallint | default 100, one of 50/75/100/125/150 |

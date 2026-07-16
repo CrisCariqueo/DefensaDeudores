@@ -12,5 +12,3 @@ local.properties
 */build/
 */.cxx/
 
-# Gradle wrapper jar is regenerated on first Android Studio sync / `gradle wrapper`.
-gradle/wrapper/gradle-wrapper.jar

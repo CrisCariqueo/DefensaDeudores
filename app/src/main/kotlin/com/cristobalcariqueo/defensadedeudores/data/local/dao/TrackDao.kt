@@ -5,8 +5,10 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.PersonEntity
+import com.cristobalcariqueo.defensadedeudores.data.local.entity.SourceEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackPersonEntity
+import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackSourceEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -40,6 +42,69 @@ interface TrackDao {
         """,
     )
     fun observeShortcutPeople(trackId: String): Flow<List<PersonEntity>>
+
+    /** Related sources for the track's quick-create area; empty relation = all sources are offered. */
+    @Query(
+        """
+        SELECT s.* FROM sources s
+        JOIN track_sources ts ON ts.source_id = s.id
+        WHERE ts.track_id = :trackId AND s.deleted_at IS NULL
+        ORDER BY s.name COLLATE NOCASE
+        """,
+    )
+    fun observeRelatedSources(trackId: String): Flow<List<SourceEntity>>
+
+    // -- track config screen: membership management. Shortcut/source sets ride
+    // -- along on track pushes, so every change also marks the track dirty.
+
+    @Query("UPDATE tracks SET updated_at = :now, dirty = 1 WHERE id = :id")
+    suspend fun touch(id: String, now: Long)
+
+    @Insert
+    suspend fun insertShortcut(row: TrackPersonEntity)
+
+    @Query("DELETE FROM track_people WHERE track_id = :trackId AND person_id = :personId")
+    suspend fun deleteShortcut(trackId: String, personId: String)
+
+    @Insert
+    suspend fun insertTrackSource(row: TrackSourceEntity)
+
+    @Query("DELETE FROM track_sources WHERE track_id = :trackId AND source_id = :sourceId")
+    suspend fun deleteTrackSource(trackId: String, sourceId: String)
+
+    @Transaction
+    suspend fun addShortcut(trackId: String, personId: String, now: Long) {
+        insertShortcut(TrackPersonEntity(trackId = trackId, personId = personId))
+        touch(trackId, now)
+    }
+
+    @Transaction
+    suspend fun removeShortcut(trackId: String, personId: String, now: Long) {
+        deleteShortcut(trackId, personId)
+        touch(trackId, now)
+    }
+
+    @Transaction
+    suspend fun addRelatedSource(trackId: String, sourceId: String, now: Long) {
+        insertTrackSource(TrackSourceEntity(trackId = trackId, sourceId = sourceId))
+        touch(trackId, now)
+    }
+
+    @Transaction
+    suspend fun removeRelatedSource(trackId: String, sourceId: String, now: Long) {
+        deleteTrackSource(trackId, sourceId)
+        touch(trackId, now)
+    }
+
+    /** Usage guards: only unused members may be removed from a track. */
+    @Query("SELECT COUNT(*) FROM registries WHERE track_id = :trackId AND person_id = :personId")
+    suspend fun registryCountForPerson(trackId: String, personId: String): Int
+
+    @Query("SELECT COUNT(*) FROM registries WHERE track_id = :trackId AND source_id = :sourceId")
+    suspend fun registryCountForSource(trackId: String, sourceId: String): Int
+
+    @Query("SELECT COUNT(*) FROM track_people WHERE track_id = :trackId")
+    suspend fun shortcutCount(trackId: String): Int
 
     @Query("UPDATE tracks SET name = :name, updated_at = :now, dirty = 1 WHERE id = :id")
     suspend fun rename(id: String, name: String, now: Long)

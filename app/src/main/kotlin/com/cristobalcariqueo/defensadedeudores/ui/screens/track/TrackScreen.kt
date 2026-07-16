@@ -1,33 +1,43 @@
 package com.cristobalcariqueo.defensadedeudores.ui.screens.track
 
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.PostAdd
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -41,15 +51,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.cristobalcariqueo.defensadedeudores.R
 import com.cristobalcariqueo.defensadedeudores.domain.model.Person
 import com.cristobalcariqueo.defensadedeudores.domain.model.Source
+import com.cristobalcariqueo.defensadedeudores.ui.components.ColorDot
 import com.cristobalcariqueo.defensadedeudores.ui.components.DonutChart
-import com.cristobalcariqueo.defensadedeudores.ui.components.NameEditDialog
 import com.cristobalcariqueo.defensadedeudores.ui.components.RegistryRow
 import com.cristobalcariqueo.defensadedeudores.ui.format.formatClp
+import com.cristobalcariqueo.defensadedeudores.ui.theme.swatchColor
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -65,11 +79,13 @@ fun TrackScreen(
     onBack: () -> Unit,
     onOpenPeople: () -> Unit,
     onOpenSources: () -> Unit,
+    onOpenTrackConfig: () -> Unit,
     viewModel: TrackViewModel = koinViewModel(parameters = { parametersOf(trackId) }),
 ) {
     val track by viewModel.track.collectAsState()
     val shortcuts by viewModel.shortcuts.collectAsState()
     val allPeople by viewModel.allPeople.collectAsState()
+    val allSources by viewModel.allSources.collectAsState()
     val sources by viewModel.sources.collectAsState()
     val settings by viewModel.settings.collectAsState()
     val selectedDebtorId by viewModel.selectedDebtorId.collectAsState()
@@ -87,11 +103,10 @@ fun TrackScreen(
     val returnSearch by viewModel.returnSearch.collectAsState()
     val suggestion by viewModel.suggestion.collectAsState()
     val editTarget by viewModel.editTarget.collectAsState()
+    val fullEditTarget by viewModel.fullEditTarget.collectAsState()
 
-    var menuOpen by remember { mutableStateOf(false) }
-    var renaming by remember { mutableStateOf(false) }
-    var deleting by remember { mutableStateOf(false) }
     var filtersOpen by remember { mutableStateOf(false) }
+    var detailedCreate by remember { mutableStateOf(false) }
     var quickCreateSource by remember { mutableStateOf<Source?>(null) }
 
     val returnBg = settings?.returnBgColor ?: "#FFF3CD"
@@ -109,26 +124,10 @@ fun TrackScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { menuOpen = true }) {
+                    IconButton(onClick = onOpenTrackConfig) {
                         Icon(
-                            Icons.Default.MoreVert,
-                            contentDescription = stringResource(R.string.track_menu),
-                        )
-                    }
-                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.action_rename)) },
-                            onClick = {
-                                menuOpen = false
-                                renaming = true
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.track_delete)) },
-                            onClick = {
-                                menuOpen = false
-                                deleting = true
-                            },
+                            Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.track_config_title),
                         )
                     }
                 },
@@ -157,6 +156,7 @@ fun TrackScreen(
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
+                Spacer(Modifier.height(16.dp))
             }
 
             item {
@@ -169,6 +169,7 @@ fun TrackScreen(
                     onOpenPeople = onOpenPeople,
                     onOpenSources = onOpenSources,
                 )
+                Spacer(Modifier.height(16.dp))
             }
 
             item {
@@ -176,29 +177,35 @@ fun TrackScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
                 ) {
-                    OutlinedTextField(
+                    CompactSearchField(
                         value = filter.query,
                         onValueChange = viewModel::setSearchQuery,
-                        label = { Text(stringResource(R.string.track_search_hint)) },
-                        singleLine = true,
+                        hint = stringResource(R.string.track_search_hint),
                         modifier = Modifier.weight(1f),
                     )
-                    IconButton(onClick = { filtersOpen = true }) {
+                    FilledIconToggleButton(
+                        checked = filter.hasSheetFilters,
+                        onCheckedChange = { filtersOpen = true },
+                    ) {
                         Icon(
                             Icons.Default.FilterList,
                             contentDescription = stringResource(R.string.track_filters),
                         )
                     }
-                    IconButton(
-                        onClick = viewModel::openReturnSearch,
-                        enabled = selectedDebtorId != null,
-                    ) {
+                    IconButton(onClick = viewModel::openReturnSearch) {
                         Icon(
                             Icons.Default.CurrencyExchange,
                             contentDescription = stringResource(R.string.return_search_title),
                         )
                     }
+                    IconButton(onClick = { detailedCreate = true }) {
+                        Icon(
+                            Icons.Default.PostAdd,
+                            contentDescription = stringResource(R.string.detailed_create_title),
+                        )
+                    }
                 }
+                Spacer(Modifier.height(12.dp))
             }
 
             item {
@@ -220,11 +227,17 @@ fun TrackScreen(
                 }
             } else {
                 items(recentRows, key = { it.registry.id }) { row ->
-                    RegistryRow(row, returnBg, onAmountClick = viewModel::openEdit)
+                    RegistryRow(
+                        row,
+                        returnBg,
+                        onAmountClick = viewModel::openEdit,
+                        onLongPress = viewModel::openFullEdit,
+                    )
                 }
             }
 
             item {
+                Spacer(Modifier.height(16.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
@@ -247,7 +260,12 @@ fun TrackScreen(
                     )
                 }
                 items(historyRows, key = { "h-${it.registry.id}" }) { row ->
-                    RegistryRow(row, returnBg, onAmountClick = viewModel::openEdit)
+                    RegistryRow(
+                        row,
+                        returnBg,
+                        onAmountClick = viewModel::openEdit,
+                        onLongPress = viewModel::openFullEdit,
+                    )
                 }
                 item {
                     HistoryPager(
@@ -258,36 +276,6 @@ fun TrackScreen(
                 }
             }
         }
-    }
-
-    if (renaming) {
-        NameEditDialog(
-            title = stringResource(R.string.action_rename),
-            initialName = track?.name.orEmpty(),
-            onConfirm = { name ->
-                viewModel.renameTrack(name)
-                renaming = false
-            },
-            onDismiss = { renaming = false },
-        )
-    }
-
-    if (deleting) {
-        AlertDialog(
-            onDismissRequest = { deleting = false },
-            title = { Text(stringResource(R.string.track_delete)) },
-            text = { Text(stringResource(R.string.track_delete_confirm, track?.name.orEmpty())) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.deleteTrack(onBack) }) {
-                    Text(stringResource(R.string.action_delete))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { deleting = false }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            },
-        )
     }
 
     quickCreateSource?.let { source ->
@@ -313,9 +301,31 @@ fun TrackScreen(
         )
     }
 
+    fullEditTarget?.let { row ->
+        EditRegistryDialog(
+            row = row,
+            sources = allSources,
+            onConfirm = viewModel::confirmFullEdit,
+            onDismiss = viewModel::closeEdit,
+        )
+    }
+
+    if (detailedCreate) {
+        DetailedCreateDialog(
+            people = allPeople,
+            sources = sources,
+            onConfirm = { personId, sourceId, amount, note, date ->
+                viewModel.createNormal(personId, sourceId, amount, note, date)
+                detailedCreate = false
+            },
+            onDismiss = { detailedCreate = false },
+        )
+    }
+
     returnSearch?.let { state ->
         ReturnSearchDialog(
             state = state,
+            onSelectDebtor = viewModel::selectReturnDebtor,
             onAmountChange = viewModel::setReturnAmount,
             onToggle = viewModel::toggleReturnSelection,
             onSettle = viewModel::settleSelected,
@@ -327,6 +337,7 @@ fun TrackScreen(
     suggestion?.let { current ->
         MatchSuggestionDialog(
             suggestion = current,
+            returnBgColor = returnBg,
             onConfirm = viewModel::confirmSuggestion,
             onDismiss = viewModel::dismissSuggestion,
         )
@@ -336,7 +347,7 @@ fun TrackScreen(
         FilterSheet(
             current = filter,
             people = allPeople,
-            allSources = sources,
+            allSources = allSources,
             onApply = { newFilter ->
                 viewModel.setFilter(newFilter)
                 filtersOpen = false
@@ -375,6 +386,7 @@ private fun QuickCreateSection(
             )
             return@Column
         }
+        val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
         Row(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
@@ -385,7 +397,10 @@ private fun QuickCreateSection(
                 FilterChip(
                     selected = person.id == selectedDebtorId,
                     onClick = { onSelectDebtor(person.id) },
-                    label = { Text(person.name) },
+                    leadingIcon = {
+                        ColorDot(swatchColor(person.color, dark, fallbackSeed = person.id))
+                    },
+                    label = { Text(person.name, maxLines = 1) },
                 )
             }
         }
@@ -396,19 +411,31 @@ private fun QuickCreateSection(
                 onClick = onOpenSources,
             )
         } else {
-            Row(
+            // Up to three wrapped rows of source buttons; overflow scrolls sideways.
+            val rows = minOf(sources.size, SOURCE_GRID_MAX_ROWS)
+            LazyHorizontalGrid(
+                rows = GridCells.Fixed(rows),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier
-                    .horizontalScroll(rememberScrollState())
+                    .fillMaxWidth()
+                    .height((rows * SOURCE_GRID_ROW_HEIGHT + (rows - 1) * 6).dp)
                     .padding(vertical = 4.dp),
             ) {
-                sources.forEach { source ->
-                    OutlinedButton(onClick = { onSourceClick(source) }) { Text(source.name) }
+                gridItems(sources, key = { it.id }) { source ->
+                    OutlinedButton(onClick = { onSourceClick(source) }) {
+                        ColorDot(swatchColor(source.color, dark, fallbackSeed = source.id))
+                        Spacer(Modifier.size(6.dp))
+                        Text(source.name, maxLines = 1)
+                    }
                 }
             }
         }
     }
 }
+
+private const val SOURCE_GRID_MAX_ROWS = 3
+private const val SOURCE_GRID_ROW_HEIGHT = 48
 
 @Composable
 private fun EmptyStateAction(message: String, button: String, onClick: () -> Unit) {
@@ -472,3 +499,47 @@ private fun HistoryPager(page: Int, pageCount: Int, onPage: (Int) -> Unit) {
         }
     }
 }
+
+/** Search box slimmer than the stock text field -- the row packs three action buttons beside it. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CompactSearchField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    hint: String,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        textStyle = MaterialTheme.typography.bodyMedium
+            .copy(color = MaterialTheme.colorScheme.onSurface),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        singleLine = true,
+        interactionSource = interactionSource,
+        modifier = modifier.height(SEARCH_FIELD_HEIGHT.dp),
+    ) { innerTextField ->
+        OutlinedTextFieldDefaults.DecorationBox(
+            value = value,
+            innerTextField = innerTextField,
+            enabled = true,
+            singleLine = true,
+            visualTransformation = VisualTransformation.None,
+            interactionSource = interactionSource,
+            placeholder = {
+                Text(hint, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+            },
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            container = {
+                OutlinedTextFieldDefaults.Container(
+                    enabled = true,
+                    isError = false,
+                    interactionSource = interactionSource,
+                )
+            },
+        )
+    }
+}
+
+private const val SEARCH_FIELD_HEIGHT = 44

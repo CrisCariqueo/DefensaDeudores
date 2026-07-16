@@ -7,9 +7,10 @@ import androidx.compose.ui.res.stringResource
 import com.cristobalcariqueo.defensadedeudores.R
 import com.cristobalcariqueo.defensadedeudores.ui.components.NameCrudScreen
 import com.cristobalcariqueo.defensadedeudores.ui.components.NamedItem
+import com.cristobalcariqueo.defensadedeudores.ui.theme.nextSwatchKey
 import org.koin.androidx.compose.koinViewModel
 
-/** People (debtor) CRUD -- SCOPE.md screen 3. */
+/** Debtor CRUD -- SCOPE.md screen 3. */
 @Composable
 fun PeopleScreen(
     onBack: () -> Unit,
@@ -20,8 +21,9 @@ fun PeopleScreen(
     NameCrudScreen(
         title = stringResource(R.string.screen_people_title),
         addDialogTitle = stringResource(R.string.people_add_title),
-        items = people.map { NamedItem(it.id, it.name) },
+        items = people.map { NamedItem(it.id, it.name, it.color) },
         emptyMessage = stringResource(R.string.people_empty),
+        suggestedColorKey = nextSwatchKey(people.map { it.color }),
         onAdd = viewModel::add,
         onRename = viewModel::rename,
         onDelete = viewModel::delete,

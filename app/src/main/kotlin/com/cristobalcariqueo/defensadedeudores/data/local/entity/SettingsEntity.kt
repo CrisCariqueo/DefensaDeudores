@@ -15,7 +15,7 @@ data class SettingsEntity(
     @PrimaryKey val id: Int = SINGLETON_ID,
     val font: String = "default",
     val language: String = "es-CL",
-    @ColumnInfo(name = "dark_theme") val darkTheme: Boolean = true,
+    val theme: String = "system",
     @ColumnInfo(name = "return_bg_color") val returnBgColor: String = "#FFF3CD",
     @ColumnInfo(name = "recent_table_size") val recentTableSize: Int = 50,
     @ColumnInfo(name = "historical_table_size") val historicalTableSize: Int = 100,
@@ -31,7 +31,7 @@ data class SettingsEntity(
 fun SettingsEntity.toDomain() = Settings(
     font = font,
     language = language,
-    darkTheme = darkTheme,
+    theme = theme,
     returnBgColor = returnBgColor,
     recentTableSize = recentTableSize,
     historicalTableSize = historicalTableSize,
@@ -41,7 +41,7 @@ fun SettingsEntity.toDomain() = Settings(
 fun Settings.toEntity() = SettingsEntity(
     font = font,
     language = language,
-    darkTheme = darkTheme,
+    theme = theme,
     returnBgColor = returnBgColor,
     recentTableSize = recentTableSize,
     historicalTableSize = historicalTableSize,

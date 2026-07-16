@@ -33,16 +33,16 @@ class StartingViewModel(
         combine(people, sources) { p, s -> p.isNotEmpty() && s.isNotEmpty() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
 
-    fun addPerson(name: String) {
+    fun addPerson(name: String, color: String?) {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return
-        viewModelScope.launch { personRepository.create(trimmed) }
+        viewModelScope.launch { personRepository.create(trimmed, color) }
     }
 
-    fun addSource(name: String) {
+    fun addSource(name: String, color: String?) {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return
-        viewModelScope.launch { sourceRepository.create(trimmed) }
+        viewModelScope.launch { sourceRepository.create(trimmed, color) }
     }
 
     fun completeOnboarding(onComplete: () -> Unit) {

@@ -23,6 +23,8 @@ create table people (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id) on delete cascade,
     name text not null,
+    -- swatch key from the app's fixed palette (e.g. 'blue'); null = auto
+    color text,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
     deleted_at timestamptz
@@ -37,6 +39,8 @@ create table sources (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id) on delete cascade,
     name text not null,
+    -- swatch key from the app's fixed palette (e.g. 'blue'); null = auto
+    color text,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
     deleted_at timestamptz
@@ -55,6 +59,19 @@ create table track_people (
 
 alter table track_people enable row level security;
 create policy "track_people_owner" on track_people for all
+    using (exists (select 1 from tracks t where t.id = track_id and t.user_id = auth.uid()))
+    with check (exists (select 1 from tracks t where t.id = track_id and t.user_id = auth.uid()));
+
+-- ============================================================ track_sources (optional relation)
+-- Empty set for a track = all sources offered in its quick-create area.
+create table track_sources (
+    track_id uuid not null references tracks(id) on delete cascade,
+    source_id uuid not null references sources(id) on delete cascade,
+    primary key (track_id, source_id)
+);
+
+alter table track_sources enable row level security;
+create policy "track_sources_owner" on track_sources for all
     using (exists (select 1 from tracks t where t.id = track_id and t.user_id = auth.uid()))
     with check (exists (select 1 from tracks t where t.id = track_id and t.user_id = auth.uid()));
 
@@ -99,7 +116,7 @@ create table settings (
     user_id uuid primary key references auth.users(id) on delete cascade,
     font text not null default 'default',
     language text not null default 'es-CL' check (language in ('es-CL', 'en-US')),
-    dark_theme boolean not null default true,
+    theme text not null default 'system' check (theme in ('system', 'dark', 'light')),
     return_bg_color text not null default '#FFF3CD',
     recent_table_size smallint not null default 50 check (recent_table_size in (20, 30, 40, 50, 60, 70)),
     historical_table_size smallint not null default 100 check (historical_table_size in (50, 75, 100, 125, 150)),
@@ -143,3 +160,12 @@ create trigger registries_bump_updated_at before update on registries
     for each row execute procedure public.bump_updated_at();
 create trigger settings_bump_updated_at before update on settings
     for each row execute procedure public.bump_updated_at();
+
+-- ============================================================ grants
+-- Projects created after Supabase's secure-by-default change no longer
+-- auto-grant table privileges, so grant explicitly. RLS still scopes every
+-- row to its owner; anon gets nothing because the app only syncs signed in.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+alter default privileges in schema public
+    grant select, insert, update, delete on tables to authenticated;

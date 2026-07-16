@@ -7,6 +7,7 @@ import androidx.compose.ui.res.stringResource
 import com.cristobalcariqueo.defensadedeudores.R
 import com.cristobalcariqueo.defensadedeudores.ui.components.NameCrudScreen
 import com.cristobalcariqueo.defensadedeudores.ui.components.NamedItem
+import com.cristobalcariqueo.defensadedeudores.ui.theme.nextSwatchKey
 import org.koin.androidx.compose.koinViewModel
 
 /** Sources (tag/category) CRUD -- SCOPE.md screen 4. */
@@ -20,8 +21,9 @@ fun SourcesScreen(
     NameCrudScreen(
         title = stringResource(R.string.screen_sources_title),
         addDialogTitle = stringResource(R.string.sources_add_title),
-        items = sources.map { NamedItem(it.id, it.name) },
+        items = sources.map { NamedItem(it.id, it.name, it.color) },
         emptyMessage = stringResource(R.string.sources_empty),
+        suggestedColorKey = nextSwatchKey(sources.map { it.color }),
         onAdd = viewModel::add,
         onRename = viewModel::rename,
         onDelete = viewModel::delete,

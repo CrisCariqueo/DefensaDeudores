@@ -19,11 +19,12 @@ class SourceRepositoryImpl(
     override fun observeSources(): Flow<List<Source>> =
         dao.observeActive().map { entities -> entities.map(SourceEntity::toDomain) }
 
-    override suspend fun create(name: String): Source {
+    override suspend fun create(name: String, color: String?): Source {
         val now = Clock.System.now().toEpochMilliseconds()
         val entity = SourceEntity(
             id = UUID.randomUUID().toString(),
             name = name,
+            color = color,
             createdAt = now,
             updatedAt = now,
         )
@@ -31,8 +32,8 @@ class SourceRepositoryImpl(
         return entity.toDomain()
     }
 
-    override suspend fun update(sourceId: String, name: String) {
-        dao.rename(sourceId, name, Clock.System.now().toEpochMilliseconds())
+    override suspend fun update(sourceId: String, name: String, color: String?) {
+        dao.update(sourceId, name, color, Clock.System.now().toEpochMilliseconds())
     }
 
     override suspend fun delete(sourceId: String) {

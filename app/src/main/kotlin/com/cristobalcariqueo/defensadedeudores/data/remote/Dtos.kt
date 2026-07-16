@@ -6,6 +6,7 @@ import com.cristobalcariqueo.defensadedeudores.data.local.entity.SettingsEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.SourceEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackPersonEntity
+import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackSourceEntity
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
@@ -55,6 +56,7 @@ data class PersonDto(
     val id: String,
     @SerialName("user_id") val userId: String,
     val name: String,
+    val color: String? = null,
     @SerialName("created_at") val createdAt: String,
     @SerialName("updated_at") val updatedAt: String,
     @SerialName("deleted_at") val deletedAt: String? = null,
@@ -63,6 +65,7 @@ data class PersonDto(
 fun PersonDto.toEntity() = PersonEntity(
     id = id,
     name = name,
+    color = color,
     createdAt = createdAt.toEpochMs(),
     updatedAt = updatedAt.toEpochMs(),
     deletedAt = deletedAt?.toEpochMs(),
@@ -74,6 +77,7 @@ fun PersonEntity.toDto(userId: String) = PersonDto(
     id = id,
     userId = userId,
     name = name,
+    color = color,
     createdAt = createdAt.toIso(),
     updatedAt = updatedAt.toIso(),
     deletedAt = deletedAt?.toIso(),
@@ -84,6 +88,7 @@ data class SourceDto(
     val id: String,
     @SerialName("user_id") val userId: String,
     val name: String,
+    val color: String? = null,
     @SerialName("created_at") val createdAt: String,
     @SerialName("updated_at") val updatedAt: String,
     @SerialName("deleted_at") val deletedAt: String? = null,
@@ -92,6 +97,7 @@ data class SourceDto(
 fun SourceDto.toEntity() = SourceEntity(
     id = id,
     name = name,
+    color = color,
     createdAt = createdAt.toEpochMs(),
     updatedAt = updatedAt.toEpochMs(),
     deletedAt = deletedAt?.toEpochMs(),
@@ -103,6 +109,7 @@ fun SourceEntity.toDto(userId: String) = SourceDto(
     id = id,
     userId = userId,
     name = name,
+    color = color,
     createdAt = createdAt.toIso(),
     updatedAt = updatedAt.toIso(),
     deletedAt = deletedAt?.toIso(),
@@ -175,11 +182,21 @@ fun TrackPersonDto.toEntity() = TrackPersonEntity(trackId = trackId, personId = 
 fun TrackPersonEntity.toDto() = TrackPersonDto(trackId = trackId, personId = personId)
 
 @Serializable
+data class TrackSourceDto(
+    @SerialName("track_id") val trackId: String,
+    @SerialName("source_id") val sourceId: String,
+)
+
+fun TrackSourceDto.toEntity() = TrackSourceEntity(trackId = trackId, sourceId = sourceId)
+
+fun TrackSourceEntity.toDto() = TrackSourceDto(trackId = trackId, sourceId = sourceId)
+
+@Serializable
 data class SettingsDto(
     @SerialName("user_id") val userId: String,
     val font: String,
     val language: String,
-    @SerialName("dark_theme") val darkTheme: Boolean,
+    val theme: String = "system",
     @SerialName("return_bg_color") val returnBgColor: String,
     @SerialName("recent_table_size") val recentTableSize: Int,
     @SerialName("historical_table_size") val historicalTableSize: Int,
@@ -190,7 +207,7 @@ data class SettingsDto(
 fun SettingsDto.toEntity() = SettingsEntity(
     font = font,
     language = language,
-    darkTheme = darkTheme,
+    theme = theme,
     returnBgColor = returnBgColor,
     recentTableSize = recentTableSize,
     historicalTableSize = historicalTableSize,
@@ -203,7 +220,7 @@ fun SettingsEntity.toDto(userId: String, updatedAtIso: String) = SettingsDto(
     userId = userId,
     font = font,
     language = language,
-    darkTheme = darkTheme,
+    theme = theme,
     returnBgColor = returnBgColor,
     recentTableSize = recentTableSize,
     historicalTableSize = historicalTableSize,

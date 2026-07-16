@@ -1,8 +1,7 @@
 [versions]
-# Pinned to what was current around this project's planning date. Android Studio
-# will likely offer an AGP/Gradle upgrade on first sync -- accept it, these are
-# a reasonable starting point, not a hard requirement.
-agp = "8.6.0"
+# AGP/Gradle track Android Studio's upgrade assistant (last accepted: AGP 8.13.2
+# + Gradle 8.13). Keep the wrapper and agp bumped together.
+agp = "8.13.2"
 kotlin = "2.0.20"
 ksp = "2.0.20-1.0.25"
 coreKtx = "1.13.1"

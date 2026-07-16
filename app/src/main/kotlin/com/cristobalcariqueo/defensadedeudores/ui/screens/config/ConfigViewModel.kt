@@ -89,7 +89,7 @@ class ConfigViewModel(
 
     // ---- settings
 
-    fun setDarkTheme(enabled: Boolean) = update { it.copy(darkTheme = enabled) }
+    fun setTheme(theme: String) = update { it.copy(theme = theme) }
 
     fun setLanguage(tag: String) = update { it.copy(language = tag) }
 

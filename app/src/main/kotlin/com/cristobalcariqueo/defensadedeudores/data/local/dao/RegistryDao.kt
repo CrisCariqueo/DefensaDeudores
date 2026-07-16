@@ -24,6 +24,7 @@ data class RegistryRowResult(
 data class SliceResult(
     val id: String,
     val name: String,
+    val color: String?,
     val total: Long,
 )
 
@@ -31,6 +32,39 @@ data class SliceResult(
 interface RegistryDao {
     @Insert
     suspend fun insert(registry: RegistryEntity)
+
+    /** Debtors owing something in this track -- the return-search debtor selector. */
+    @Query(
+        """
+        SELECT * FROM people WHERE id IN (
+            SELECT DISTINCT person_id FROM registries
+            WHERE track_id = :trackId AND type = ${RegistryEntity.TYPE_NORMAL}
+              AND checked = 0 AND deleted_at IS NULL
+        )
+        ORDER BY name COLLATE NOCASE
+        """,
+    )
+    suspend fun debtorsWithPending(trackId: String): List<PersonEntity>
+
+    /** All unchecked normal regs in this track -- return-search before a debtor is picked. */
+    @Query(
+        """
+        SELECT * FROM registries
+        WHERE track_id = :trackId
+          AND type = ${RegistryEntity.TYPE_NORMAL} AND checked = 0 AND deleted_at IS NULL
+        ORDER BY date DESC, created_at DESC
+        """,
+    )
+    suspend fun uncheckedNormalsAll(trackId: String): List<RegistryEntity>
+
+    /** Full-edit in-place fields; amount goes through the supersede flow instead. */
+    @Query(
+        """
+        UPDATE registries SET note = :note, source_id = :sourceId, date = :date,
+            updated_at = :now, dirty = 1 WHERE id = :id
+        """,
+    )
+    suspend fun updateDetails(id: String, note: String?, sourceId: String?, date: Int, now: Long)
 
     /** Debtor's unchecked normal regs in this track, for return-search + retro matching. */
     @Query(
@@ -127,11 +161,11 @@ interface RegistryDao {
     /** Debtor graph: unchecked normal regs only (outstanding debt). */
     @Query(
         """
-        SELECT r.person_id AS id, p.name AS name, SUM(r.amount) AS total
+        SELECT r.person_id AS id, p.name AS name, p.color AS color, SUM(r.amount) AS total
         FROM registries r JOIN people p ON p.id = r.person_id
         WHERE r.track_id = :trackId AND r.type = ${RegistryEntity.TYPE_NORMAL}
           AND r.checked = 0 AND r.deleted_at IS NULL
-        GROUP BY r.person_id, p.name
+        GROUP BY r.person_id, p.name, p.color
         ORDER BY total DESC
         """,
     )
@@ -140,11 +174,11 @@ interface RegistryDao {
     /** Source graph: unchecked normal regs only; independent of the debtor graph. */
     @Query(
         """
-        SELECT r.source_id AS id, s.name AS name, SUM(r.amount) AS total
+        SELECT r.source_id AS id, s.name AS name, s.color AS color, SUM(r.amount) AS total
         FROM registries r JOIN sources s ON s.id = r.source_id
         WHERE r.track_id = :trackId AND r.type = ${RegistryEntity.TYPE_NORMAL}
           AND r.checked = 0 AND r.deleted_at IS NULL
-        GROUP BY r.source_id, s.name
+        GROUP BY r.source_id, s.name, s.color
         ORDER BY total DESC
         """,
     )

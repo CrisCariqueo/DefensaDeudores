@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TrackViewModel(
@@ -49,9 +50,15 @@ class TrackViewModel(
     val shortcuts: StateFlow<List<Person>> = trackRepository.observeShortcutPeople(trackId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyList())
 
-    /** All sources -- one quick-create button each. */
-    val sources: StateFlow<List<Source>> = sourceRepository.observeSources()
+    /** All sources -- filter sheet + track config. */
+    val allSources: StateFlow<List<Source>> = sourceRepository.observeSources()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyList())
+
+    /** Quick-create sources: the track's related set, or every source when none are related. */
+    val sources: StateFlow<List<Source>> =
+        combine(allSources, trackRepository.observeRelatedSources(trackId)) { all, related ->
+            related.ifEmpty { all }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptyList())
 
     /** All people, for the filter sheet -- registries aren't restricted to shortcuts. */
     val allPeople: StateFlow<List<Person>> = personRepository.observePeople()
@@ -147,11 +154,17 @@ class TrackViewModel(
         _historyPage.value = page.coerceAtLeast(0)
     }
 
-    fun createNormal(personId: String, sourceId: String, amount: Int, note: String?) {
+    fun createNormal(
+        personId: String,
+        sourceId: String,
+        amount: Int,
+        note: String?,
+        date: LocalDate? = null,
+    ) {
         if (amount <= 0) return
         viewModelScope.launch {
             val reg = registryRepository.createNormal(
-                trackId, personId, sourceId, amount, note?.ifBlank { null },
+                trackId, personId, sourceId, amount, note?.ifBlank { null }, date,
             )
             // Forward match moment: every new normal reg scans the debtor's live retRegs.
             val retRegs = registryRepository.uncheckedRetRegs(trackId, personId)
@@ -167,15 +180,37 @@ class TrackViewModel(
     private val _suggestion = MutableStateFlow<MatchSuggestion?>(null)
     val suggestion: StateFlow<MatchSuggestion?> = _suggestion.asStateFlow()
 
+    /**
+     * Detached from the quick-create selection: the modal has its own debtor
+     * picker, and searching works before picking one (candidates span all
+     * debtors); only creating a retReg requires a debtor.
+     */
     fun openReturnSearch() {
-        val debtor = selectedDebtorId.value ?: return
         viewModelScope.launch {
+            val debtors = registryRepository.debtorsWithPending(trackId)
+            val preselect = debtors.singleOrNull()?.id
             _returnSearch.value = ReturnSearchState(
-                debtorId = debtor,
-                candidates = registryRepository.uncheckedNormals(trackId, debtor),
+                debtors = debtors,
+                debtorId = preselect,
+                candidates = returnCandidates(preselect),
             )
         }
     }
+
+    /** Tapping the selected debtor unselects it (back to all-debtors search). */
+    fun selectReturnDebtor(personId: String) {
+        viewModelScope.launch {
+            val newId = personId.takeIf { it != _returnSearch.value?.debtorId }
+            val candidates = returnCandidates(newId)
+            _returnSearch.update { state ->
+                state?.copy(debtorId = newId, candidates = candidates, selected = emptySet())
+            }
+        }
+    }
+
+    private suspend fun returnCandidates(debtorId: String?) =
+        if (debtorId == null) registryRepository.uncheckedNormalsAll(trackId)
+        else registryRepository.uncheckedNormals(trackId, debtorId)
 
     fun closeReturnSearch() {
         _returnSearch.value = null
@@ -209,12 +244,13 @@ class TrackViewModel(
     /** Path B: persist a retReg, then fire the retroactive match scan. */
     fun createReturnFromSearch() {
         val state = _returnSearch.value ?: return
+        val debtorId = state.debtorId ?: return
         val amount = state.amount ?: return
         if (amount <= 0) return
         viewModelScope.launch {
-            val retReg = registryRepository.createReturn(trackId, state.debtorId, amount, null)
+            val retReg = registryRepository.createReturn(trackId, debtorId, amount, null)
             _returnSearch.value = null
-            scanRetro(retReg.id, state.debtorId)
+            scanRetro(retReg.id, debtorId)
         }
     }
 
@@ -235,32 +271,63 @@ class TrackViewModel(
         _suggestion.value = null
     }
 
-    // ---- edit flow (task #9): same-day in place, older regs supersede
+    // ---- edit flow (task #9): same-day in place, older regs supersede.
+    // Amount tap = amount-only dialog; row long-press = full edit (v0.2.0).
 
     private val _editTarget = MutableStateFlow<RegistryWithNames?>(null)
     val editTarget: StateFlow<RegistryWithNames?> = _editTarget.asStateFlow()
+
+    private val _fullEditTarget = MutableStateFlow<RegistryWithNames?>(null)
+    val fullEditTarget: StateFlow<RegistryWithNames?> = _fullEditTarget.asStateFlow()
 
     /** Only normal regs are editable; superseded are frozen, returns carry remaining-value semantics. */
     fun openEdit(row: RegistryWithNames) {
         if (row.registry.type == RegistryType.NORMAL) _editTarget.value = row
     }
 
+    fun openFullEdit(row: RegistryWithNames) {
+        if (row.registry.type == RegistryType.NORMAL) _fullEditTarget.value = row
+    }
+
     fun closeEdit() {
         _editTarget.value = null
+        _fullEditTarget.value = null
     }
 
     fun confirmEdit(newAmount: Int) {
         val row = _editTarget.value ?: return
         if (newAmount <= 0) return
         viewModelScope.launch {
-            val result = registryRepository.editAmount(row.registry.id, newAmount)
+            applyAmountEdit(row, newAmount)
             _editTarget.value = null
-            // A superseded reg that ended up unmatched re-enters the normal
-            // forward-suggestion flow (DATA_MODEL.md edit flow).
-            if (result is EditResult.Superseded && !result.rematched && !result.newReg.checked) {
-                val retRegs = registryRepository.uncheckedRetRegs(trackId, result.newReg.personId)
-                _suggestion.value = RetRegMatcher.forward(result.newReg, retRegs)
-            }
+        }
+    }
+
+    /** Amount rides the supersede rules; note/source/date update in place on the surviving row. */
+    fun confirmFullEdit(newAmount: Int, note: String?, sourceId: String?, date: LocalDate) {
+        val row = _fullEditTarget.value ?: return
+        if (newAmount <= 0) return
+        viewModelScope.launch {
+            val survivingId =
+                if (newAmount != row.registry.amount) applyAmountEdit(row, newAmount)
+                else row.registry.id
+            registryRepository.updateDetails(survivingId, note?.ifBlank { null }, sourceId, date)
+            _fullEditTarget.value = null
+        }
+    }
+
+    /** Runs the edit-amount flow and returns the id of the row now carrying the value. */
+    private suspend fun applyAmountEdit(row: RegistryWithNames, newAmount: Int): String {
+        val result = registryRepository.editAmount(row.registry.id, newAmount)
+        // A superseded reg that ended up unmatched re-enters the normal
+        // forward-suggestion flow (DATA_MODEL.md edit flow).
+        if (result is EditResult.Superseded && !result.rematched && !result.newReg.checked) {
+            val retRegs = registryRepository.uncheckedRetRegs(trackId, result.newReg.personId)
+            _suggestion.value = RetRegMatcher.forward(result.newReg, retRegs)
+        }
+        return when (result) {
+            is EditResult.InPlace -> result.registryId
+            is EditResult.Superseded -> result.newReg.id
         }
     }
 
@@ -271,19 +338,6 @@ class TrackViewModel(
         _suggestion.value = RetRegMatcher.retro(retReg, normals)
     }
 
-    fun renameTrack(name: String) {
-        val trimmed = name.trim()
-        if (trimmed.isEmpty()) return
-        viewModelScope.launch { trackRepository.rename(trackId, trimmed) }
-    }
-
-    fun deleteTrack(onDeleted: () -> Unit) {
-        viewModelScope.launch {
-            trackRepository.softDelete(trackId)
-            onDeleted()
-        }
-    }
-
     private companion object {
         const val STOP_TIMEOUT_MS = 5_000L
         const val DEFAULT_RECENT = 50
@@ -291,9 +345,10 @@ class TrackViewModel(
     }
 }
 
-/** Return-search modal state: entered amount + selectable unchecked normals. */
+/** Return-search modal state: debtor picker + entered amount + selectable unchecked normals. */
 data class ReturnSearchState(
-    val debtorId: String,
+    val debtors: List<Person> = emptyList(),
+    val debtorId: String? = null,
     val amountText: String = "",
     val candidates: List<Registry> = emptyList(),
     val selected: Set<String> = emptySet(),

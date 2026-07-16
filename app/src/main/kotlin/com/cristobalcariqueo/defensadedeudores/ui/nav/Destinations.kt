@@ -12,4 +12,9 @@ sealed class Destination(val route: String) {
         const val ARG_TRACK_ID = "trackId"
         fun route(trackId: String) = "track/$trackId"
     }
+
+    data object TrackConfig : Destination("track/{trackId}/config") {
+        const val ARG_TRACK_ID = "trackId"
+        fun route(trackId: String) = "track/$trackId/config"
+    }
 }

@@ -31,6 +31,12 @@ class MainViewModel(
         }
     }
 
+    fun renameTrack(trackId: String, name: String) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch { trackRepository.rename(trackId, trimmed) }
+    }
+
     private companion object {
         const val STOP_TIMEOUT_MS = 5_000L
     }

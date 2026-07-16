@@ -17,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
@@ -25,24 +24,15 @@ import androidx.compose.ui.unit.dp
 import com.cristobalcariqueo.defensadedeudores.R
 import com.cristobalcariqueo.defensadedeudores.domain.model.GraphSlice
 import com.cristobalcariqueo.defensadedeudores.ui.format.formatClp
+import com.cristobalcariqueo.defensadedeudores.ui.theme.swatchColor
 
-// Validated categorical palettes (dataviz skill, reference instance): fixed
-// slot order is the CVD-safety mechanism -- assign by list position, never cycle.
-private val LightPalette = listOf(
-    Color(0xFF2A78D6), Color(0xFF1BAF7A), Color(0xFFEDA100), Color(0xFF008300),
-    Color(0xFF4A3AA7), Color(0xFFE34948), Color(0xFFE87BA4), Color(0xFFEB6834),
-)
-private val DarkPalette = listOf(
-    Color(0xFF3987E5), Color(0xFF199E70), Color(0xFFC98500), Color(0xFF008300),
-    Color(0xFF9085E9), Color(0xFFE66767), Color(0xFFD55181), Color(0xFFD95926),
-)
 private const val MAX_SLICES = 8
 private const val GAP_DEGREES = 2f
 
 /**
  * Donut of outstanding debt shares + legend (name and amount in text tokens --
- * identity never rides on color alone). Slices beyond [MAX_SLICES] - 1 fold
- * into "Other".
+ * identity never rides on color alone). Slice color follows the entity's
+ * swatch, never its rank. Slices beyond [MAX_SLICES] - 1 fold into "Other".
  */
 @Composable
 fun DonutChart(
@@ -51,8 +41,8 @@ fun DonutChart(
     modifier: Modifier = Modifier,
 ) {
     // Follow the app theme (Config override), not the system: dark surfaces
-    // need the dark-stepped palette.
-    val palette = if (MaterialTheme.colorScheme.background.luminance() < 0.5f) DarkPalette else LightPalette
+    // need the dark-stepped swatch variants.
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val otherColor = MaterialTheme.colorScheme.outline
     val otherLabel = stringResource(R.string.track_graph_other)
 
@@ -90,9 +80,11 @@ fun DonutChart(
                 val gap = if (display.size > 1) GAP_DEGREES else 0f
                 val available = 360f - gap * display.size
                 var startAngle = -90f + gap / 2
-                display.forEachIndexed { index, slice ->
+                display.forEach { slice ->
                     val sweep = (slice.total.toFloat() / total) * available
-                    val color = if (slice.id == "other") otherColor else palette[index % palette.size]
+                    val color =
+                        if (slice.id == "other") otherColor
+                        else swatchColor(slice.color, dark, fallbackSeed = slice.id)
                     drawArc(
                         color = color,
                         startAngle = startAngle,
@@ -112,8 +104,10 @@ fun DonutChart(
             verticalArrangement = Arrangement.spacedBy(2.dp),
             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         ) {
-            display.forEachIndexed { index, slice ->
-                val color = if (slice.id == "other") otherColor else palette[index % palette.size]
+            display.forEach { slice ->
+                val color =
+                    if (slice.id == "other") otherColor
+                    else swatchColor(slice.color, dark, fallbackSeed = slice.id)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(10.dp).background(color, CircleShape))
                     Text(

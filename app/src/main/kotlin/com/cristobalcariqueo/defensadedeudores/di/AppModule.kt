@@ -24,6 +24,7 @@ import com.cristobalcariqueo.defensadedeudores.ui.screens.people.PeopleViewModel
 import com.cristobalcariqueo.defensadedeudores.ui.screens.sources.SourcesViewModel
 import com.cristobalcariqueo.defensadedeudores.ui.screens.starting.StartingViewModel
 import com.cristobalcariqueo.defensadedeudores.ui.screens.track.TrackViewModel
+import com.cristobalcariqueo.defensadedeudores.ui.screens.trackconfig.TrackConfigViewModel
 import io.github.jan.supabase.SupabaseClient
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -60,6 +61,7 @@ val appModule = module {
     viewModel { StartingViewModel(get(), get(), get()) }
     viewModel { MainViewModel(get(), get()) }
     viewModel { (trackId: String) -> TrackViewModel(trackId, get(), get(), get(), get(), get()) }
+    viewModel { (trackId: String) -> TrackConfigViewModel(trackId, get(), get(), get()) }
     viewModel { ConfigViewModel(get(), get(), get(), get()) }
     viewModel { ConflictsViewModel(get(), get()) }
 }

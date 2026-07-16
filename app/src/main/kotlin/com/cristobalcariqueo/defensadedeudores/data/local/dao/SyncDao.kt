@@ -14,6 +14,7 @@ import com.cristobalcariqueo.defensadedeudores.data.local.entity.SyncDeleteEntit
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.SyncStateEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackEntity
 import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackPersonEntity
+import com.cristobalcariqueo.defensadedeudores.data.local.entity.TrackSourceEntity
 import kotlinx.coroutines.flow.Flow
 
 /** Sync-engine bookkeeping: watermarks, dirty-row reads, remote-row writes, conflicts, delete queue. */
@@ -47,6 +48,9 @@ interface SyncDao {
 
     @Query("SELECT * FROM track_people WHERE track_id = :trackId")
     suspend fun shortcutsFor(trackId: String): List<TrackPersonEntity>
+
+    @Query("SELECT * FROM track_sources WHERE track_id = :trackId")
+    suspend fun trackSourcesFor(trackId: String): List<TrackSourceEntity>
 
     // ---- marking pushed
 
@@ -94,6 +98,12 @@ interface SyncDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertShortcuts(rows: List<TrackPersonEntity>)
+
+    @Query("DELETE FROM track_sources WHERE track_id = :trackId")
+    suspend fun clearTrackSources(trackId: String)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertTrackSources(rows: List<TrackSourceEntity>)
 
     // ---- row lookups for conflict decisions
 

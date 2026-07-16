@@ -14,8 +14,8 @@ interface SourceDao {
     @Insert
     suspend fun insert(source: SourceEntity)
 
-    @Query("UPDATE sources SET name = :name, updated_at = :now, dirty = 1 WHERE id = :id")
-    suspend fun rename(id: String, name: String, now: Long)
+    @Query("UPDATE sources SET name = :name, color = :color, updated_at = :now, dirty = 1 WHERE id = :id")
+    suspend fun update(id: String, name: String, color: String?, now: Long)
 
     @Query("SELECT remote_updated_at FROM sources WHERE id = :id")
     suspend fun remoteUpdatedAt(id: String): Long?

@@ -9,6 +9,7 @@ import com.cristobalcariqueo.defensadedeudores.data.remote.SettingsDto
 import com.cristobalcariqueo.defensadedeudores.data.remote.SourceDto
 import com.cristobalcariqueo.defensadedeudores.data.remote.TrackDto
 import com.cristobalcariqueo.defensadedeudores.data.remote.TrackPersonDto
+import com.cristobalcariqueo.defensadedeudores.data.remote.TrackSourceDto
 import com.cristobalcariqueo.defensadedeudores.data.remote.toDto
 import com.cristobalcariqueo.defensadedeudores.data.remote.toEntity
 import com.cristobalcariqueo.defensadedeudores.data.repository.AuthRepository
@@ -169,18 +170,24 @@ class SyncEngine(
     }
 
     /**
-     * track_people has no updated_at: fetch the full set (small) and replace
-     * locally, but only for tracks that are clean locally -- a dirty track's
-     * shortcuts haven't been pushed yet and must not be clobbered.
+     * track_people/track_sources have no updated_at: fetch the full sets
+     * (small) and replace locally, but only for tracks that are clean locally
+     * -- a dirty track's sets haven't been pushed yet and must not be clobbered.
      */
     private suspend fun pullShortcuts() {
-        val remote = client.from(TABLE_TRACK_PEOPLE).select().decodeList<TrackPersonDto>()
-        val byTrack = remote.groupBy { it.trackId }
-        for ((trackId, dtos) in byTrack) {
+        val people = client.from(TABLE_TRACK_PEOPLE).select().decodeList<TrackPersonDto>()
+        for ((trackId, dtos) in people.groupBy { it.trackId }) {
             val local = syncDao.trackById(trackId)
             if (local == null || local.dirty) continue
             syncDao.clearShortcuts(trackId)
             syncDao.insertShortcuts(dtos.map(TrackPersonDto::toEntity))
+        }
+        val sources = client.from(TABLE_TRACK_SOURCES).select().decodeList<TrackSourceDto>()
+        for ((trackId, dtos) in sources.groupBy { it.trackId }) {
+            val local = syncDao.trackById(trackId)
+            if (local == null || local.dirty) continue
+            syncDao.clearTrackSources(trackId)
+            syncDao.insertTrackSources(dtos.map(TrackSourceDto::toEntity))
         }
     }
 
@@ -275,10 +282,13 @@ class SyncEngine(
         }.decodeList<TrackDto>().associateBy { it.id }
         for (row in dirty) {
             val remote = returned[row.id] ?: continue
-            // Shortcuts ride along with their track: replace the remote set.
+            // Shortcut/source sets ride along with their track: replace the remote sets.
             client.from(TABLE_TRACK_PEOPLE).delete { filter { eq("track_id", row.id) } }
             val shortcuts = syncDao.shortcutsFor(row.id).map { it.toDto() }
             if (shortcuts.isNotEmpty()) client.from(TABLE_TRACK_PEOPLE).insert(shortcuts)
+            client.from(TABLE_TRACK_SOURCES).delete { filter { eq("track_id", row.id) } }
+            val relatedSources = syncDao.trackSourcesFor(row.id).map { it.toDto() }
+            if (relatedSources.isNotEmpty()) client.from(TABLE_TRACK_SOURCES).insert(relatedSources)
             syncDao.markTrackSynced(row.id, remote.updatedAt.toEpochMs(), row.updatedAt)
         }
     }
@@ -427,6 +437,7 @@ class SyncEngine(
     companion object {
         const val TABLE_TRACKS = "tracks"
         const val TABLE_TRACK_PEOPLE = "track_people"
+        const val TABLE_TRACK_SOURCES = "track_sources"
         const val TABLE_PEOPLE = "people"
         const val TABLE_SOURCES = "sources"
         const val TABLE_REGISTRIES = "registries"

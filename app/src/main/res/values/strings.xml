@@ -5,7 +5,7 @@
     <string name="screen_starting_title">Antes de empezar</string>
     <string name="screen_main_title">Inicio</string>
     <string name="screen_track_title">Seguimiento</string>
-    <string name="screen_people_title">Personas</string>
+    <string name="screen_people_title">Deudores</string>
     <string name="screen_sources_title">Fuentes</string>
     <string name="screen_config_title">Configuración</string>
 
@@ -21,18 +21,18 @@
     <string name="delete_confirm_title">¿Eliminar?</string>
     <string name="delete_confirm_message">¿Eliminar \"%1$s\"? Si tiene registros asociados, su historial se conserva.</string>
 
-    <string name="people_add_title">Nueva persona</string>
-    <string name="people_empty">Aún no hay personas. Crea la primera con el botón +.</string>
+    <string name="people_add_title">Nuevo deudor</string>
+    <string name="people_empty">Aún no hay deudores. Crea el primero con el botón +.</string>
     <string name="sources_add_title">Nueva fuente</string>
     <string name="sources_empty">Aún no hay fuentes. Crea la primera con el botón +.</string>
 
-    <string name="starting_intro">Para usar la app necesitas al menos una persona (deudor) y una fuente. Créalas aquí.</string>
+    <string name="starting_intro">Para usar la app necesitas al menos un deudor y una fuente. Créalos aquí.</string>
 
     <string name="main_empty">Aún no hay seguimientos. Crea el primero con el botón +.</string>
     <string name="track_new_title">Nuevo seguimiento</string>
-    <string name="track_people_hint">Personas de acceso rápido (elige al menos una)</string>
-    <string name="track_no_people_warning">No hay personas para asociar. Crea al menos una primero.</string>
-    <string name="track_go_to_people">Ir a Personas</string>
+    <string name="track_people_hint">Deudores de acceso rápido (elige al menos uno)</string>
+    <string name="track_no_people_warning">No hay deudores para asociar. Crea al menos uno primero.</string>
+    <string name="track_go_to_people">Ir a Deudores</string>
 
     <string name="track_menu">Opciones</string>
     <string name="action_rename">Renombrar</string>
@@ -44,7 +44,7 @@
     <string name="track_graph_other">Otros</string>
     <string name="track_outstanding_total">Total pendiente: %1$s</string>
     <string name="track_quick_create">Registro rápido</string>
-    <string name="track_no_shortcuts_warning">Este seguimiento no tiene personas activas asociadas.</string>
+    <string name="track_no_shortcuts_warning">Este seguimiento no tiene deudores activos asociados.</string>
     <string name="track_no_sources_warning">No hay fuentes. Crea al menos una para registrar.</string>
     <string name="track_go_to_sources">Ir a Fuentes</string>
     <string name="track_search_hint">Buscar (monto o nota)</string>
@@ -61,7 +61,7 @@
     <string name="quick_create_title">%1$s · %2$s</string>
     <string name="amount_label">Monto (CLP)</string>
     <string name="note_label">Nota (opcional)</string>
-    <string name="filter_people">Personas</string>
+    <string name="filter_people">Deudores</string>
     <string name="filter_sources">Fuentes</string>
     <string name="filter_type">Tipo</string>
     <string name="filter_checked">Estado</string>
@@ -79,7 +79,7 @@
     <string name="return_search_title">Buscar devolución</string>
     <string name="return_selected_sum">Seleccionado: %1$s de %2$s</string>
     <string name="return_no_candidates">No hay registros pendientes con monto menor o igual.</string>
-    <string name="return_settle">Saldar seleccionados</string>
+    <string name="return_settle">Confirmar</string>
     <string name="return_create">Crear devolución</string>
     <string name="match_title">Sugerencia de cruce</string>
     <string name="match_covered_msg">La deuda de %1$s quedará saldada.</string>
@@ -89,10 +89,9 @@
     <string name="edit_amount_title">Editar monto</string>
     <string name="edit_supersede_note">Esto registrará una corrección; el registro original no se edita directamente.</string>
 
-    <string name="config_dark_theme">Tema oscuro</string>
     <string name="config_language">Idioma</string>
     <string name="config_font">Fuente tipográfica</string>
-    <string name="config_font_default">Predeterminada</string>
+    <string name="config_font_default">Sistema</string>
     <string name="config_font_serif">Serif</string>
     <string name="config_font_sans">Sans</string>
     <string name="config_font_mono">Mono</string>
@@ -122,4 +121,24 @@
     <string name="conflicts_merge">Por campo</string>
     <string name="conflicts_local_value">Local: %1$s</string>
     <string name="conflicts_remote_value">Remoto: %1$s</string>
+    <string name="filter_dates">Fechas</string>
+    <string name="return_pick_debtor">Deudor</string>
+    <string name="match_suggested_row">Devolución sugerida</string>
+    <string name="track_config_title">Ajustes del seguimiento</string>
+    <string name="track_config_debtors">Deudores de registro rápido</string>
+    <string name="track_config_sources">Fuentes relacionadas</string>
+    <string name="track_config_sources_hint">Sin selección, se ofrecen todas las fuentes en el registro rápido.</string>
+    <string name="track_config_in_use">En uso en este seguimiento; no se puede quitar.</string>
+    <string name="track_config_last_debtor">Un seguimiento necesita al menos un deudor.</string>
+    <string name="config_theme">Tema</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="theme_light">Claro</string>
+    <string name="filter_amount_min">Monto mínimo</string>
+    <string name="filter_amount_max">Monto máximo</string>
+    <string name="detailed_create_title">Registro detallado</string>
+    <string name="label_date">Fecha</string>
+    <string name="edit_registry_title">Editar registro</string>
+    <string name="track_config_no_debtors">No hay deudores de registro rápido seleccionados. ¿Salir igualmente?</string>
+    <string name="action_leave">Salir</string>
 </resources>

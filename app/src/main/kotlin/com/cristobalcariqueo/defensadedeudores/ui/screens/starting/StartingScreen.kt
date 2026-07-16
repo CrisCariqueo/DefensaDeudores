@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.cristobalcariqueo.defensadedeudores.R
 import com.cristobalcariqueo.defensadedeudores.ui.components.NameEditDialog
+import com.cristobalcariqueo.defensadedeudores.ui.theme.nextSwatchKey
 import org.koin.androidx.compose.koinViewModel
 
 /**
@@ -87,8 +88,9 @@ fun StartingScreen(
         NameEditDialog(
             title = stringResource(R.string.people_add_title),
             initialName = "",
-            onConfirm = { name ->
-                viewModel.addPerson(name)
+            initialColor = nextSwatchKey(people.map { it.color }),
+            onConfirm = { name, color ->
+                viewModel.addPerson(name, color)
                 addingPerson = false
             },
             onDismiss = { addingPerson = false },
@@ -98,8 +100,9 @@ fun StartingScreen(
         NameEditDialog(
             title = stringResource(R.string.sources_add_title),
             initialName = "",
-            onConfirm = { name ->
-                viewModel.addSource(name)
+            initialColor = nextSwatchKey(sources.map { it.color }),
+            onConfirm = { name, color ->
+                viewModel.addSource(name, color)
                 addingSource = false
             },
             onDismiss = { addingSource = false },
